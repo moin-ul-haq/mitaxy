@@ -1,0 +1,7 @@
+{% load static %}
+<div class="field">
+  <label class="field__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field }}
+  {% if field.help_text %}<div class="field__hint">{{ field.help_text }}</div>{% endif %}
+  {% for error in field.errors %}<div class="field__error">{{ error }}</div>{% endfor %}
+</div>

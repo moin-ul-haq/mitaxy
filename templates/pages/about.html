@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:760px;">
+  <div class="center" style="margin-bottom:36px;">
+    <span class="eyebrow">About {{ BRAND_NAME }}</span>
+    <h1>We sit through the meeting so you don't have to</h1>
+    <p class="hero__sub" style="margin-top:10px;">{{ BRAND_NAME }} turns any Zoom or Google Meet call into a clean, structured recap — automatically, without you lifting a finger.</p>
+  </div>
+
+  <div class="card card--pad" style="margin-bottom:18px;">
+    <h3>Our mission</h3>
+    <p class="muted">The average knowledge worker loses hours every week to meetings they didn't need to attend live. {{ BRAND_NAME }} gives that time back. Send our notetaker, get the decisions and action items in your inbox, and spend your focus where it matters.</p>
+  </div>
+
+  <div class="notes-grid">
+    <div class="card card--pad">
+      <h3>🤖 Autonomous</h3>
+      <p class="muted">A server-side bot joins, records and transcribes — zero involvement from you after scheduling.</p>
+    </div>
+    <div class="card card--pad">
+      <h3>🎯 Accurate</h3>
+      <p class="muted">Speaker-labelled transcripts and AI notes grounded strictly in what was actually said.</p>
+    </div>
+    <div class="card card--pad">
+      <h3>🔒 Private</h3>
+      <p class="muted">Your recordings and notes belong to you. They're tied to your account and never shared.</p>
+    </div>
+  </div>
+
+  <div class="cta-band" style="margin-top:36px;">
+    <h2>Ready to skip your next status meeting?</h2>
+    <p>Create a free account and send your first notetaker in under a minute.</p>
+    <a href="{% url 'accounts:register' %}" class="btn btn--ghost btn--lg">Get started free</a>
+  </div>
+</div>
+{% endblock %}

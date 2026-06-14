@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ meeting.display_title }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:880px;">
+  <a href="{% url 'meetings:dashboard' %}" class="back-link">← Back to dashboard</a>
+
+  <div class="detail-head">
+    <div>
+      <span class="eyebrow">{{ meeting.get_platform_display }} meeting</span>
+      <h1 style="margin-top:6px;">{{ meeting.display_title }}</h1>
+    </div>
+    <span class="badge {{ meeting.badge_class }}">{{ meeting.get_status_display }}</span>
+  </div>
+
+  <div class="detail-meta">
+    <span>📅 <b>{{ meeting.scheduled_at|date:"M j, Y · g:i A" }}</b></span>
+    {% if meeting.bot_name %}<span>🤖 <b>{{ meeting.bot_name }}</b></span>{% endif %}
+    {% if recording and recording.duration_seconds %}<span>⏱️ <b>{{ recording.duration_display }}</b></span>{% endif %}
+    <span>✉️ <b>{{ meeting.notes_email }}</b></span>
+    {% if recording and recording.media_url %}<span>🎥 <a href="{{ recording.media_url }}" target="_blank" rel="noopener">Recording</a></span>{% endif %}
+  </div>
+
+  {% if meeting.can_deploy_now %}
+    <form method="post" action="{% url 'meetings:deploy_now' meeting.pk %}" onsubmit="return confirm('Deploy the bot into this meeting right now?');" style="margin:0 0 22px;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--primary">⚡ Deploy bot now</button>
+      <span class="muted" style="margin-left:10px; font-size:.88rem;">Joins immediately instead of at the scheduled time.</span>
+    </form>
+  {% endif %}
+
+  {% if meeting.status == "failed" %}
+    <div class="card card--pad center">
+      <div class="empty__art">⚠️</div>
+      <h2>Something went wrong</h2>
+      <p class="muted">{{ meeting.error_message|default:"We couldn't process this meeting." }}</p>
+    </div>
+
+  {% elif meeting.is_completed and notes %}
+    <div class="card card--pad summary-card" style="margin-bottom:18px;">
+      <h3><span class="note-card__dot" style="background:var(--teal-600);"></span> Summary</h3>
+      <p>{{ notes.summary|default:"No summary available." }}</p>
+    </div>
+
+    <div class="notes-grid">
+      <div class="card card--pad note-card">
+        <h3><span class="note-card__dot" style="background:var(--green);"></span> Action items</h3>
+        {% if notes.action_items %}
+          <ul class="note-list">{% for item in notes.action_items %}<li>{{ item }}</li>{% endfor %}</ul>
+        {% else %}<p class="muted">None captured.</p>{% endif %}
+      </div>
+      <div class="card card--pad note-card">
+        <h3><span class="note-card__dot" style="background:var(--blue);"></span> Key decisions</h3>
+        {% if notes.key_decisions %}
+          <ul class="note-list">{% for item in notes.key_decisions %}<li>{{ item }}</li>{% endfor %}</ul>
+        {% else %}<p class="muted">None captured.</p>{% endif %}
+      </div>
+      <div class="card card--pad note-card">
+        <h3><span class="note-card__dot" style="background:var(--amber);"></span> Follow-ups</h3>
+        {% if notes.follow_ups %}
+          <ul class="note-list">{% for item in notes.follow_ups %}<li>{{ item }}</li>{% endfor %}</ul>
+        {% else %}<p class="muted">None captured.</p>{% endif %}
+      </div>
+    </div>
+
+    {% if transcript and transcript.speaker_segments %}
+      <div class="card card--pad">
+        <h3 style="margin-bottom:14px;">Full transcript</h3>
+        <div class="transcript">
+          {% for seg in transcript.speaker_segments %}
+            {% if seg.text %}
+            <div class="transcript__line">
+              <span class="transcript__spk">{{ seg.speaker }}</span>
+              <span class="transcript__text">{{ seg.text }}</span>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    {% elif transcript and transcript.full_text %}
+      <div class="card card--pad">
+        <h3 style="margin-bottom:14px;">Full transcript</h3>
+        <p style="white-space:pre-wrap; color:var(--slate-700);">{{ transcript.full_text }}</p>
+      </div>
+    {% endif %}
+
+  {% else %}
+    <div class="card processing-card">
+      <div class="spinner"></div>
+      <h2>{% if meeting.status == "scheduled" %}Bot scheduled{% elif meeting.status == "recording" %}Recording in progress{% else %}Generating your notes{% endif %}</h2>
+      <p class="muted">
+        {% if meeting.status == "scheduled" %}
+          The notetaker will join at {{ meeting.scheduled_at|date:"g:i A, M j" }}. You can close this page — we'll email you when the notes are ready.
+        {% elif meeting.status == "recording" %}
+          {{ BRAND_NAME }} is in the call and recording. Notes will appear here once the meeting ends.
+        {% else %}
+          Transcribing the audio and writing your summary. This usually takes a few minutes.
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if not meeting.is_terminal %}
+<script>setTimeout(function(){ location.reload(); }, 20000);</script>
+{% endif %}
+{% endblock %}

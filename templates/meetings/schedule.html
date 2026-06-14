@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Schedule a meeting{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:620px;">
+  <a href="{% url 'meetings:dashboard' %}" class="back-link">← Back to dashboard</a>
+
+  <div class="card card--pad">
+    <div class="auth__head" style="text-align:left;">
+      <span class="eyebrow">New meeting</span>
+      <h1 style="font-size:1.6rem; margin-top:6px;">Schedule a notetaker</h1>
+      <p class="muted">Paste your Zoom or Google Meet link. {{ BRAND_NAME }} will join at the time you pick, record it, and email you the notes.</p>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="form-error-box">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/field.html" with field=form.title %}
+      {% include "partials/field.html" with field=form.meeting_url %}
+      {% include "partials/field.html" with field=form.bot_name %}
+      {% include "partials/field.html" with field=form.scheduled_at %}
+      {% include "partials/field.html" with field=form.notes_email %}
+      <button type="submit" class="btn btn--primary btn--block btn--lg">Schedule bot</button>
+    </form>
+  </div>
+
+  <p class="muted center" style="margin-top:18px; font-size:.85rem;">
+    🔒 The bot joins on the server — nothing runs on your device.
+  </p>
+</div>
+{% endblock %}

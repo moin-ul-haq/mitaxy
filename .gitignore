@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+
+# Env / secrets
+.env
+*.env
+!.env.example
+
+# Django
+db.sqlite3
+/staticfiles/
+/media/
+*.log
+
+# Runtime artifacts (server)
+*.sock
+celerybeat-schedule*
+celerybeat.pid
+
+# Virtualenv
+venv/
+.venv/
+env/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

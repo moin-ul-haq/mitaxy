@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Create your account{% endblock %}
+
+{% block content %}
+<div class="auth">
+  <div class="auth__card card card--pad">
+    <div class="auth__head">
+      <h1>Create your account</h1>
+      <p class="muted">Start getting AI notes from every meeting.</p>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="form-error-box">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/field.html" with field=form.full_name %}
+      {% include "partials/field.html" with field=form.email %}
+      {% include "partials/field.html" with field=form.password1 %}
+      {% include "partials/field.html" with field=form.password2 %}
+      <button type="submit" class="btn btn--primary btn--block btn--lg">Create account</button>
+    </form>
+
+    <p class="auth__alt">Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+  </div>
+</div>
+{% endblock %}

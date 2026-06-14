@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+
+{% block content %}
+<div class="auth">
+  <div class="auth__card card card--pad">
+    <div class="auth__head">
+      <h1>Welcome back</h1>
+      <p class="muted">Sign in to your {{ BRAND_NAME }} account.</p>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="form-error-box">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/field.html" with field=form.username %}
+      {% include "partials/field.html" with field=form.password %}
+      <button type="submit" class="btn btn--primary btn--block btn--lg">Sign in</button>
+    </form>
+
+    <p class="auth__alt"><a href="{% url 'accounts:password_reset' %}">Forgot your password?</a></p>
+    <p class="auth__alt">New here? <a href="{% url 'accounts:register' %}">Create an account</a></p>
+  </div>
+</div>
+{% endblock %}

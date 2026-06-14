@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ BRAND_NAME }} — {{ BRAND_TAGLINE }}{% endblock %}
+
+{% block content %}
+<section class="container hero">
+  <span class="hero__pill">● Works with Zoom &amp; Google Meet</span>
+  <h1>Send a bot to your meetings.<br><span class="hero__grad">Get the notes. Skip the call.</span></h1>
+  <p class="hero__sub">{{ BRAND_NAME }} joins your Zoom or Google Meet on your behalf, records and transcribes everything, then emails you a clean AI summary with action items and decisions.</p>
+  <div class="hero__cta">
+    <a href="{% url 'accounts:register' %}" class="btn btn--primary btn--lg">Start free</a>
+    <a href="{% url 'accounts:login' %}" class="btn btn--ghost btn--lg">Sign in</a>
+  </div>
+  <p class="hero__note">No credit card. No app to install. Your notes land in your inbox.</p>
+</section>
+
+<section class="container">
+  <div class="steps">
+    <div class="step"><div class="step__num">1</div><h3>Schedule</h3><p>Paste your meeting link and pick a time.</p></div>
+    <div class="step"><div class="step__num">2</div><h3>Bot joins</h3><p>A notetaker enters the call — no device of yours needed.</p></div>
+    <div class="step"><div class="step__num">3</div><h3>Transcribe</h3><p>Every word captured with speaker labels.</p></div>
+    <div class="step"><div class="step__num">4</div><h3>AI notes</h3><p>Summary, action items &amp; decisions, generated automatically.</p></div>
+    <div class="step"><div class="step__num">5</div><h3>Delivered</h3><p>A polished email lands in your inbox.</p></div>
+  </div>
+</section>
+
+<section class="container">
+  <div class="section-head"><div><span class="eyebrow">Why {{ BRAND_NAME }}</span><h2>Everything from one pasted link</h2></div></div>
+  <div class="features">
+    <div class="card feature"><div class="feature__icon">🎙️</div><h3>Records for you</h3><p class="muted">A server-side bot captures full audio — you never have to show up or hit record.</p></div>
+    <div class="card feature"><div class="feature__icon">🗣️</div><h3>Knows who said what</h3><p class="muted">Speaker-labelled transcripts so the notes actually make sense afterward.</p></div>
+    <div class="card feature"><div class="feature__icon">✅</div><h3>Action items, sorted</h3><p class="muted">AI pulls out decisions, owners and follow-ups — not just a wall of text.</p></div>
+    <div class="card feature"><div class="feature__icon">📬</div><h3>Straight to your inbox</h3><p class="muted">A clean, formatted summary email, plus a searchable dashboard of every meeting.</p></div>
+  </div>
+</section>
+
+<section class="container" id="faq">
+  <div class="section-head"><div class="center" style="width:100%;"><span class="eyebrow">FAQ</span><h2>Questions, answered</h2></div></div>
+  <div class="faq">
+    <details class="faq__item">
+      <summary>Which meeting platforms does {{ BRAND_NAME }} support?</summary>
+      <p>Zoom and Google Meet today. Just paste the meeting link when you schedule — {{ BRAND_NAME }} detects the platform automatically.</p>
+    </details>
+    <details class="faq__item">
+      <summary>Do I need to install anything or stay on the call?</summary>
+      <p>No. The bot runs entirely on our servers and joins on your behalf. Nothing runs on your device, and you don't have to attend.</p>
+    </details>
+    <details class="faq__item">
+      <summary>Can I change the name the bot shows in the meeting?</summary>
+      <p>Yes. Every time you schedule a meeting you can set the bot's display name, so participants see exactly what you want.</p>
+    </details>
+    <details class="faq__item">
+      <summary>What's in the notes I receive?</summary>
+      <p>A concise summary, action items (with owners where mentioned), key decisions, and follow-ups — plus the full speaker-labelled transcript in your dashboard.</p>
+    </details>
+    <details class="faq__item">
+      <summary>Can I make the bot join right now instead of later?</summary>
+      <p>Absolutely. Each scheduled meeting has a <strong>Deploy now</strong> button that sends the bot into the call immediately.</p>
+    </details>
+    <details class="faq__item">
+      <summary>Is my meeting data private?</summary>
+      <p>Your recordings, transcripts and notes are tied to your account and only visible to you. We never share your data.</p>
+    </details>
+  </div>
+</section>
+
+<section class="container">
+  <div class="cta-band">
+    <h2>Never sit through a status meeting again</h2>
+    <p>Let {{ BRAND_NAME }} attend, listen and summarize. You read the recap in two minutes.</p>
+    <a href="{% url 'accounts:register' %}" class="btn btn--ghost btn--lg">Create your free account</a>
+  </div>
+</section>
+{% endblock %}
+{% block body_class %}page-landing{% endblock %}

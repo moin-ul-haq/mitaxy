@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Contact{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:720px;">
+  <div class="center" style="margin-bottom:32px;">
+    <span class="eyebrow">Contact</span>
+    <h1>Get in touch</h1>
+    <p class="hero__sub" style="margin-top:10px;">Questions, feedback, or partnership ideas? Send us a note and we'll reply soon.</p>
+  </div>
+
+  <div class="contact-grid">
+    <div class="card card--pad">
+      {% if form.non_field_errors %}<div class="form-error-box">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>{% endif %}
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "partials/field.html" with field=form.name %}
+        {% include "partials/field.html" with field=form.email %}
+        {% include "partials/field.html" with field=form.subject %}
+        {% include "partials/field.html" with field=form.message %}
+        <button type="submit" class="btn btn--primary btn--block btn--lg">Send message</button>
+      </form>
+    </div>
+    <div class="contact-aside">
+      <div class="card card--pad" style="margin-bottom:16px;">
+        <h3>📧 Email</h3>
+        <p class="muted" style="margin:0;">support@mitaxy.app</p>
+      </div>
+      <div class="card card--pad" style="margin-bottom:16px;">
+        <h3>💬 Response time</h3>
+        <p class="muted" style="margin:0;">We usually reply within one business day.</p>
+      </div>
+      <div class="card card--pad">
+        <h3>❓ Quick answers</h3>
+        <p class="muted" style="margin:0;">Check the <a href="{% url 'meetings:landing' %}#faq">FAQ</a> for the most common questions.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

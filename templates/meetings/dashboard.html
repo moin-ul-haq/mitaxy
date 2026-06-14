@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container"
+     data-statuses-url="{% url 'meetings:statuses' %}"
+     data-has-active="{{ has_active|yesno:'true,false' }}">
+
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Your meetings</span>
+      <h1>Hi {{ user.first_name_or_email }} 👋</h1>
+    </div>
+    <a href="{% url 'meetings:schedule' %}" class="btn btn--primary">+ Schedule a meeting</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat__num">{{ counts.total }}</div><div class="stat__label">Total meetings</div></div>
+    <div class="stat"><div class="stat__num">{{ counts.upcoming }}</div><div class="stat__label">Upcoming / in progress</div></div>
+    <div class="stat"><div class="stat__num">{{ counts.completed }}</div><div class="stat__label">Notes ready</div></div>
+  </div>
+
+  {% if meetings %}
+    <div class="meeting-list">
+      {% for m in meetings %}
+        <div class="m-row">
+          <div class="m-row__icon">{{ m.get_platform_display|slice:":1" }}</div>
+          <div class="m-row__body">
+            <a class="m-row__title" href="{{ m.get_absolute_url }}">{{ m.display_title }}</a>
+            <span class="m-row__meta">{{ m.get_platform_display }} · {{ m.scheduled_at|date:"M j, Y · g:i A" }}{% if m.bot_name %} · 🤖 {{ m.bot_name }}{% endif %}</span>
+          </div>
+          <div class="m-row__right">
+            <span class="badge {{ m.badge_class }}" data-meeting-badge="{{ m.pk }}">{{ m.get_status_display }}</span>
+            {% if m.can_deploy_now %}
+              <form method="post" action="{% url 'meetings:deploy_now' m.pk %}" onsubmit="return confirm('Deploy the bot into this meeting right now?');" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--ghost btn--sm">⚡ Deploy now</button>
+              </form>
+            {% endif %}
+            {% if m.is_completed %}
+              <a href="{{ m.get_absolute_url }}" class="m-row__arrow" aria-label="View notes">View →</a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card empty">
+      <div class="empty__art">📅</div>
+      <h2>No meetings yet</h2>
+      <p class="muted">Schedule your first meeting and {{ BRAND_NAME }} will handle the rest.</p>
+      <a href="{% url 'meetings:schedule' %}" class="btn btn--primary btn--lg">Schedule a meeting</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
