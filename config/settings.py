@@ -226,6 +226,29 @@ BRAND_NAME = "Mitaxy"
 BRAND_TAGLINE = "Never sit through a meeting again."
 
 # ----------------------------------------------------------------------------
+# Sentry (errors + performance). No-op until SENTRY_DSN is set in .env.
+# Captures unhandled exceptions from gunicorn AND the celery worker/beat,
+# plus any logger.error(...) call, with request/task context attached.
+# ----------------------------------------------------------------------------
+SENTRY_DSN = env("SENTRY_DSN", "")
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            environment=env("SENTRY_ENVIRONMENT", "production"),
+            # % of requests/tasks traced for performance monitoring.
+            traces_sample_rate=float(env("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+            # Never send user PII (emails etc.) unless explicitly enabled.
+            send_default_pii=env_bool("SENTRY_SEND_PII", False),
+        )
+    except Exception:  # a broken DSN/import must never take the site down
+        import logging
+
+        logging.getLogger("mitaxy").exception("Sentry init failed — continuing without it")
+
+# ----------------------------------------------------------------------------
 # Logging
 # ----------------------------------------------------------------------------
 LOGGING = {

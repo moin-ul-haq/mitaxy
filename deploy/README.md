@@ -45,6 +45,8 @@ Required: `DJANGO_SECRET_KEY`, `DATABASE_URL`, `RECALL_API_KEY`, `RECALL_REGION`
 Optional:
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — enables "Continue with Google"
   (redirect URI to whitelist: `https://mitaxy.moinit.dev/accounts/google/callback/`).
+- `SENTRY_DSN` — enables Sentry error tracking for web + celery
+  (plus `SENTRY_ENVIRONMENT`, `SENTRY_TRACES_SAMPLE_RATE` [0.1], `SENTRY_SEND_PII` [false]).
 - `MITAXY_JOIN_TIMEOUT_MIN` (30), `MITAXY_WAITING_TIMEOUT_MIN` (45),
   `MITAXY_STALE_AFTER_MIN` (360) — bot lifecycle timeouts.
 - `CACHE_URL` (default `redis://127.0.0.1:6379/7`).
