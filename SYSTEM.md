@@ -493,3 +493,4 @@ redis-cli -n 5 ping
 | 2026-06-15 | **Fix:** processing stuck forever — Recall presigned URL overflowed `varchar(1500)` → `media_url`/`s3_url` now `TextField`; hardened `bot_status_detail` |
 | 2026-06-15 | Initialized Git in `/root/mitaxy`, pushed to `github.com/moin-ul-haq/mitaxy` |
 ```
+
