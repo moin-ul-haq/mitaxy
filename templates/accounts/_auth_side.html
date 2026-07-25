@@ -1,0 +1,16 @@
+<div class="auth-side">
+  <a class="auth-side__brand" href="{% url 'meetings:landing' %}">
+    {% include "partials/logo.svg" %} {{ BRAND_NAME }}
+  </a>
+  <div class="auth-side__mid">
+    <h2>Every meeting, remembered — without you taking a single note.</h2>
+    <p>Send a {{ BRAND_NAME }} notetaker into any Zoom, Google Meet or Teams call.</p>
+    <ul class="auth-side__points">
+      <li>{% include "partials/icon.html" with name="bot" %} Bot joins on time — or instantly, mid-meeting</li>
+      <li>{% include "partials/icon.html" with name="mic" %} Accurate transcription with speaker labels</li>
+      <li>{% include "partials/icon.html" with name="sparkle" %} AI summary, action items &amp; decisions</li>
+      <li>{% include "partials/icon.html" with name="share" %} Share notes with a private link</li>
+    </ul>
+  </div>
+  <div class="auth-side__foot">{{ BRAND_TAGLINE }}</div>
+</div>

@@ -1,40 +1,103 @@
 {% extends "emails/base_email.html" %}
+
+{% block preheader %}
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
+  {{ notes.summary|truncatechars:120 }}
+</div>
+{% endblock %}
+
 {% block email_content %}
-  <p style="margin:0 0 6px; font-size:13px; color:#0f766e; font-weight:700; text-transform:uppercase; letter-spacing:.08em;">Your meeting notes are ready</p>
-  <h1 style="margin:0 0 18px; font-size:22px; color:#0f172a;">{{ meeting.display_title }}</h1>
-  <p style="margin:0 0 22px; font-size:13px; color:#94a3b8;">
-    {{ meeting.get_platform_display }} · {{ meeting.scheduled_at|date:"M j, Y · g:i A" }}{% if recording.duration_seconds %} · {{ recording.duration_display }}{% endif %}
-  </p>
+  <p style="margin:0 0 8px; font-size:12px; color:#0f766e; font-weight:800; text-transform:uppercase; letter-spacing:.1em;">Your notes are ready</p>
+  <h1 style="margin:0 0 14px; font-size:23px; line-height:1.25; color:#0f172a; letter-spacing:-.02em;">{{ meeting.display_title }}</h1>
+
+  <!-- Meta chips -->
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 26px;">
+    <tr>
+      <td style="background:#f0fdfa; border:1px solid #ccfbf1; border-radius:999px; padding:5px 12px; font-size:12px; color:#0f766e; font-weight:600;">{{ meeting.get_platform_display }}</td>
+      <td style="width:8px; font-size:0;">&nbsp;</td>
+      <td style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:999px; padding:5px 12px; font-size:12px; color:#475569; font-weight:600;">{{ meeting.scheduled_at|date:"M j, Y · g:i A" }}</td>
+      {% if recording.duration_seconds %}
+      <td style="width:8px; font-size:0;">&nbsp;</td>
+      <td style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:999px; padding:5px 12px; font-size:12px; color:#475569; font-weight:600;">{{ recording.duration_display }}</td>
+      {% endif %}
+    </tr>
+  </table>
 
   {% if notes.summary %}
-  <h2 style="margin:0 0 8px; font-size:15px; color:#0f766e;">📋 Summary</h2>
-  <p style="margin:0 0 24px; font-size:15px; color:#334155; line-height:1.7;">{{ notes.summary }}</p>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 26px;">
+    <tr>
+      <td style="border-left:3px solid #0d9488; background:#f0fdfa; border-radius:0 12px 12px 0; padding:16px 18px;">
+        <p style="margin:0 0 6px; font-size:12px; font-weight:800; color:#0f766e; text-transform:uppercase; letter-spacing:.08em;">Summary</p>
+        <p style="margin:0; font-size:15px; color:#334155; line-height:1.75;">{{ notes.summary }}</p>
+      </td>
+    </tr>
+  </table>
   {% endif %}
 
   {% if notes.action_items %}
-  <h2 style="margin:0 0 8px; font-size:15px; color:#047857;">✅ Action items</h2>
-  <ul style="margin:0 0 24px; padding-left:20px; color:#334155; font-size:14px; line-height:1.9;">
-    {% for item in notes.action_items %}<li>{{ item }}</li>{% endfor %}
-  </ul>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;">
+    <tr>
+      <td>
+        <p style="margin:0 0 10px; font-size:13px; font-weight:800; color:#047857;">
+          <span style="display:inline-block; background:#d1fae5; border-radius:6px; padding:2px 9px; margin-right:6px;">{{ notes.action_items|length }}</span>Action items
+        </p>
+        {% for item in notes.action_items %}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="width:18px; vertical-align:top; padding:5px 0;"><div style="width:7px; height:7px; border-radius:50%; background:#10b981; margin-top:7px;"></div></td>
+          <td style="font-size:14px; color:#334155; line-height:1.7; padding:5px 0;">{{ item }}</td>
+        </tr></table>
+        {% endfor %}
+      </td>
+    </tr>
+  </table>
   {% endif %}
 
   {% if notes.key_decisions %}
-  <h2 style="margin:0 0 8px; font-size:15px; color:#1d4ed8;">🎯 Key decisions</h2>
-  <ul style="margin:0 0 24px; padding-left:20px; color:#334155; font-size:14px; line-height:1.9;">
-    {% for item in notes.key_decisions %}<li>{{ item }}</li>{% endfor %}
-  </ul>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;">
+    <tr>
+      <td>
+        <p style="margin:0 0 10px; font-size:13px; font-weight:800; color:#1d4ed8;">
+          <span style="display:inline-block; background:#dbeafe; border-radius:6px; padding:2px 9px; margin-right:6px;">{{ notes.key_decisions|length }}</span>Key decisions
+        </p>
+        {% for item in notes.key_decisions %}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="width:18px; vertical-align:top; padding:5px 0;"><div style="width:7px; height:7px; border-radius:50%; background:#3b82f6; margin-top:7px;"></div></td>
+          <td style="font-size:14px; color:#334155; line-height:1.7; padding:5px 0;">{{ item }}</td>
+        </tr></table>
+        {% endfor %}
+      </td>
+    </tr>
+  </table>
   {% endif %}
 
   {% if notes.follow_ups %}
-  <h2 style="margin:0 0 8px; font-size:15px; color:#b45309;">🔁 Follow-ups</h2>
-  <ul style="margin:0 0 24px; padding-left:20px; color:#334155; font-size:14px; line-height:1.9;">
-    {% for item in notes.follow_ups %}<li>{{ item }}</li>{% endfor %}
-  </ul>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;">
+    <tr>
+      <td>
+        <p style="margin:0 0 10px; font-size:13px; font-weight:800; color:#b45309;">
+          <span style="display:inline-block; background:#fef3c7; border-radius:6px; padding:2px 9px; margin-right:6px;">{{ notes.follow_ups|length }}</span>Follow-ups
+        </p>
+        {% for item in notes.follow_ups %}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="width:18px; vertical-align:top; padding:5px 0;"><div style="width:7px; height:7px; border-radius:50%; background:#f59e0b; margin-top:7px;"></div></td>
+          <td style="font-size:14px; color:#334155; line-height:1.7; padding:5px 0;">{{ item }}</td>
+        </tr></table>
+        {% endfor %}
+      </td>
+    </tr>
+  </table>
   {% endif %}
 
-  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 6px;">
-    <tr><td style="border-radius:10px; background-color:#0f766e;">
-      <a href="{{ detail_url }}" style="display:inline-block; padding:13px 26px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none;">View full notes &amp; transcript →</a>
-    </td></tr>
+  <!-- CTA -->
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:10px 0 8px;">
+    <tr>
+      <td style="border-radius:10px; background:linear-gradient(135deg,#0f766e,#0d9488);">
+        <a href="{{ detail_url }}" style="display:inline-block; padding:13px 26px; font-size:15px; font-weight:700; color:#ffffff; text-decoration:none;">View full notes &amp; transcript →</a>
+      </td>
+      <td style="width:12px; font-size:0;">&nbsp;</td>
+      <td style="border-radius:10px; border:1px solid #e2e8f0;">
+        <a href="{{ detail_url }}" style="display:inline-block; padding:12px 22px; font-size:14px; font-weight:600; color:#0f766e; text-decoration:none;">Share with your team</a>
+      </td>
+    </tr>
   </table>
 {% endblock %}

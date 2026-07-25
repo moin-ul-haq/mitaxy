@@ -1,16 +1,22 @@
-{% extends "base.html" %}
+{% extends "base_app.html" %}
 {% block title %}{{ meeting.display_title }}{% endblock %}
+{% block topbar_title %}Meeting details{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width:880px;">
-  <a href="{% url 'meetings:dashboard' %}" class="back-link">← Back to dashboard</a>
+<div style="max-width:920px; margin:0 auto;">
+  <a href="{% url 'meetings:dashboard' %}" class="back-link">
+    {% include "partials/icon.html" with name="arrow-left" %} Back to dashboard
+  </a>
 
   <div class="detail-head">
-    <div>
-      <span class="eyebrow">{{ meeting.get_platform_display }} meeting</span>
-      <h1 style="margin-top:6px;">{{ meeting.display_title }}</h1>
+    <div style="display:flex; align-items:flex-start; gap:14px; min-width:0;">
+      {% include "partials/platform_icon.html" with platform=meeting.platform %}
+      <div style="min-width:0;">
+        <span class="eyebrow">{{ meeting.get_platform_display }} meeting</span>
+        <h1 style="margin-top:4px;">{{ meeting.display_title }}</h1>
+      </div>
     </div>
-    <span class="badge {{ meeting.badge_class }}">{{ meeting.get_status_display }}</span>
+    <span class="badge {{ meeting.badge_class }}" data-meeting-badge="{{ meeting.pk }}">{{ meeting.get_status_display }}</span>
   </div>
 
   <div class="detail-meta">
@@ -18,45 +24,66 @@
     {% if meeting.bot_name %}<span>{% include "partials/icon.html" with name="bot" %} <b>{{ meeting.bot_name }}</b></span>{% endif %}
     {% if recording and recording.duration_seconds %}<span>{% include "partials/icon.html" with name="clock" %} <b>{{ recording.duration_display }}</b></span>{% endif %}
     <span>{% include "partials/icon.html" with name="mail" %} <b>{{ meeting.notes_email }}</b></span>
-    {% if recording and recording.media_url %}<span>{% include "partials/icon.html" with name="video" %} <a href="{{ recording.media_url }}" target="_blank" rel="noopener">Recording</a></span>{% endif %}
+    {% if recording and recording.media_url %}
+      <span>{% include "partials/icon.html" with name="video" %} <a href="{{ recording.media_url }}" target="_blank" rel="noopener"><b>Recording</b></a></span>
+    {% endif %}
   </div>
 
-  {% if meeting.can_deploy_now %}
-    <form method="post" action="{% url 'meetings:deploy_now' meeting.pk %}" onsubmit="return confirm('Deploy the bot into this meeting right now?');" style="margin:0 0 22px;">
-      {% csrf_token %}
-      <button type="submit" class="btn btn--primary">{% include "partials/icon.html" with name="bolt" %} Deploy bot now</button>
-      <span class="muted" style="margin-left:10px; font-size:.88rem;">Joins immediately instead of at the scheduled time.</span>
-    </form>
-  {% endif %}
+  <div class="detail-actions">
+    {% if meeting.can_deploy_now %}
+      <form method="post" action="{% url 'meetings:deploy_now' meeting.pk %}" data-confirm="Deploy the bot into this meeting right now?" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--primary">{% include "partials/icon.html" with name="bolt" %} Deploy bot now</button>
+      </form>
+    {% endif %}
+    {% if meeting.is_completed %}
+      <button type="button" class="btn btn--primary" data-modal-open="shareModal">
+        {% include "partials/icon.html" with name="share" %} Share notes
+      </button>
+      {% if share and share.is_active %}
+        <span class="share-state">
+          {% include "partials/icon.html" with name="link" %}
+          {% if share.is_restricted %}Shared with {{ share.allowed_emails|length }} {{ share.allowed_emails|length|pluralize:"person,people" }}{% else %}Anyone with the link{% endif %}
+        </span>
+      {% endif %}
+    {% endif %}
+    {% if meeting.can_cancel %}
+      <form method="post" action="{% url 'meetings:cancel' meeting.pk %}" data-confirm="Cancel this meeting? The bot won't join." style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--danger">{% include "partials/icon.html" with name="x" %} Cancel bot</button>
+      </form>
+    {% endif %}
+  </div>
 
   {% if meeting.status == "failed" %}
-    <div class="card card--pad center">
-      <div class="empty__art">{% include "partials/icon.html" with name="alert" %}</div>
+    <div class="card card--pad center" style="margin-bottom:18px;">
+      <div class="empty__art" style="background:var(--red-bg); color:var(--red);">{% include "partials/icon.html" with name="alert" %}</div>
       <h2>Something went wrong</h2>
-      <p class="muted">{{ meeting.error_message|default:"We couldn't process this meeting." }}</p>
+      <p class="muted" style="max-width:480px; margin:0 auto 16px;">{{ meeting.error_message|default:"We couldn't process this meeting." }}</p>
+      <a href="{% url 'meetings:schedule' %}" class="btn btn--ghost">Try another meeting</a>
     </div>
 
   {% elif meeting.is_completed and notes %}
-    <div class="card card--pad summary-card" style="margin-bottom:18px;">
+    <div class="card card--pad summary-card" style="margin-bottom:16px;">
       <h3><span class="note-card__dot" style="background:var(--teal-600);"></span> Summary</h3>
       <p>{{ notes.summary|default:"No summary available." }}</p>
     </div>
 
     <div class="notes-grid">
       <div class="card card--pad note-card">
-        <h3><span class="note-card__dot" style="background:var(--green);"></span> Action items</h3>
+        <h3><span class="note-card__dot" style="background:var(--green-500);"></span> Action items</h3>
         {% if notes.action_items %}
           <ul class="note-list">{% for item in notes.action_items %}<li>{{ item }}</li>{% endfor %}</ul>
         {% else %}<p class="muted">None captured.</p>{% endif %}
       </div>
       <div class="card card--pad note-card">
-        <h3><span class="note-card__dot" style="background:var(--blue);"></span> Key decisions</h3>
+        <h3><span class="note-card__dot" style="background:var(--blue-500);"></span> Key decisions</h3>
         {% if notes.key_decisions %}
           <ul class="note-list">{% for item in notes.key_decisions %}<li>{{ item }}</li>{% endfor %}</ul>
         {% else %}<p class="muted">None captured.</p>{% endif %}
       </div>
       <div class="card card--pad note-card">
-        <h3><span class="note-card__dot" style="background:var(--amber);"></span> Follow-ups</h3>
+        <h3><span class="note-card__dot" style="background:var(--amber-500);"></span> Follow-ups</h3>
         {% if notes.follow_ups %}
           <ul class="note-list">{% for item in notes.follow_ups %}<li>{{ item }}</li>{% endfor %}</ul>
         {% else %}<p class="muted">None captured.</p>{% endif %}
@@ -64,7 +91,7 @@
     </div>
 
     {% if transcript and transcript.speaker_segments %}
-      <div class="card card--pad">
+      <div class="card card--pad" style="margin-bottom:18px;">
         <h3 style="margin-bottom:14px;">Full transcript</h3>
         <div class="transcript">
           {% for seg in transcript.speaker_segments %}
@@ -78,19 +105,29 @@
         </div>
       </div>
     {% elif transcript and transcript.full_text %}
-      <div class="card card--pad">
+      <div class="card card--pad" style="margin-bottom:18px;">
         <h3 style="margin-bottom:14px;">Full transcript</h3>
         <p style="white-space:pre-wrap; color:var(--slate-700);">{{ transcript.full_text }}</p>
       </div>
     {% endif %}
 
   {% else %}
-    <div class="card processing-card">
+    <div class="card processing-card" style="margin-bottom:18px;">
       <div class="spinner"></div>
-      <h2>{% if meeting.status == "scheduled" %}Bot scheduled{% elif meeting.status == "recording" %}Recording in progress{% else %}Generating your notes{% endif %}</h2>
-      <p class="muted">
+      <h2 data-meeting-title-status>
+        {% if meeting.status == "scheduled" %}Bot scheduled
+        {% elif meeting.status == "joining" %}Bot is joining the call
+        {% elif meeting.status == "waiting" %}Waiting to be admitted
+        {% elif meeting.status == "recording" %}Recording in progress
+        {% else %}Generating your notes{% endif %}
+      </h2>
+      <p class="muted" style="max-width:520px; margin:0 auto;">
         {% if meeting.status == "scheduled" %}
           The notetaker will join at {{ meeting.scheduled_at|date:"g:i A, M j" }}. You can close this page — we'll email you when the notes are ready.
+        {% elif meeting.status == "joining" %}
+          The bot is connecting. If the meeting hasn't started yet, it will keep trying and join as soon as the call opens.
+        {% elif meeting.status == "waiting" %}
+          The bot is in the waiting room. Ask the host to admit “{{ meeting.bot_name|default:"the Mitaxy bot" }}” — it will start recording as soon as it's let in.
         {% elif meeting.status == "recording" %}
           {{ BRAND_NAME }} is in the call and recording. Notes will appear here once the meeting ends.
         {% else %}
@@ -99,11 +136,120 @@
       </p>
     </div>
   {% endif %}
+
+  {% if events %}
+    <div class="card card--pad">
+      <h3 style="margin-bottom:16px;" class="icon-h">{% include "partials/icon.html" with name="activity" %} Bot activity</h3>
+      <ol class="timeline">
+        {% for e in events reversed %}
+          <li class="timeline__item {% if forloop.first and not meeting.is_terminal %}is-now{% elif e.code == 'failed' %}is-fail{% elif e.code == 'completed' %}is-ok{% endif %}">
+            <span class="timeline__dot"></span>
+            <div class="timeline__msg">{{ e.message }}</div>
+            <div class="timeline__time">{{ e.created_at|date:"M j · g:i:s A" }}</div>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block modals %}
+{% if meeting.is_completed %}
+<div class="modal" id="shareModal" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__panel">
+    <div class="modal__head">
+      <h3 id="shareTitle" class="icon-h">{% include "partials/icon.html" with name="share" %} Share meeting notes</h3>
+      <button type="button" class="modal__close" data-modal-close aria-label="Close">
+        {% include "partials/icon.html" with name="x" %}
+      </button>
+    </div>
+    <div class="modal__body">
+
+      <form method="post" action="{% url 'meetings:share_update' meeting.pk %}" id="shareForm">
+        {% csrf_token %}
+        <div class="radio-cards" style="margin-bottom:16px;">
+          <label class="radio-card {% if share_form_initial.visibility != 'restricted' %}is-checked{% endif %}">
+            <input type="radio" name="visibility" value="link"
+                   {% if share_form_initial.visibility != "restricted" %}checked{% endif %}>
+            <span class="radio-card__icon">{% include "partials/icon.html" with name="globe" %}</span>
+            <span>
+              <span class="radio-card__title">Anyone with the link</span>
+              <span class="radio-card__sub" style="display:block;">Anyone who has the link can view the notes.</span>
+            </span>
+          </label>
+          <label class="radio-card {% if share_form_initial.visibility == 'restricted' %}is-checked{% endif %}">
+            <input type="radio" name="visibility" value="restricted"
+                   {% if share_form_initial.visibility == "restricted" %}checked{% endif %}>
+            <span class="radio-card__icon">{% include "partials/icon.html" with name="users" %}</span>
+            <span>
+              <span class="radio-card__title">Only specific people</span>
+              <span class="radio-card__sub" style="display:block;">Only people you list get access — each receives a personal link by email.</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="field" id="shareEmailsField" {% if share_form_initial.visibility != "restricted" %}style="display:none;"{% endif %}>
+          <label class="field__label" for="shareEmails">People to share with</label>
+          <textarea id="shareEmails" name="emails" rows="2" class="field__input"
+                    placeholder="teammate@company.com, boss@company.com">{{ share_form_initial.emails }}</textarea>
+          <div class="field__hint">Separate multiple addresses with commas.</div>
+        </div>
+
+        <label class="switch" style="margin-bottom:18px;">
+          <input type="checkbox" name="include_transcript" {% if share_form_initial.include_transcript %}checked{% endif %}>
+          <span class="switch__track"></span>
+          <span class="switch__label">Include the full transcript</span>
+        </label>
+
+        {% if share and share.is_active %}
+          <div class="field">
+            <label class="field__label">Share link</label>
+            <div class="copybar">
+              <input type="text" readonly value="{{ share.url }}" id="shareUrl">
+              <button type="button" class="btn btn--ghost btn--sm" data-copy="#shareUrl">
+                {% include "partials/icon.html" with name="copy" %} Copy
+              </button>
+            </div>
+          </div>
+        {% endif %}
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
+          <button type="submit" name="action" value="save" class="btn btn--primary">
+            {% if share and share.is_active %}Update sharing{% else %}Turn on sharing{% endif %}
+          </button>
+          <button type="submit" name="action" value="save_invite" class="btn btn--soft" id="shareInviteBtn"
+                  {% if share_form_initial.visibility != "restricted" %}style="display:none;"{% endif %}>
+            {% include "partials/icon.html" with name="mail" %} Save &amp; email invites
+          </button>
+        </div>
+      </form>
+
+      {% if share and share.is_active %}
+        <hr style="border:none; border-top:1px solid var(--slate-100); margin:18px 0 14px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <form method="post" action="{% url 'meetings:share_update' meeting.pk %}" data-confirm="Generate a new link? Everyone with the old link loses access." style="margin:0;">
+            {% csrf_token %}<input type="hidden" name="action" value="regenerate">
+            <button type="submit" class="btn btn--ghost btn--sm">{% include "partials/icon.html" with name="refresh" %} New link</button>
+          </form>
+          <form method="post" action="{% url 'meetings:share_update' meeting.pk %}" data-confirm="Turn off sharing? The link will stop working." style="margin:0;">
+            {% csrf_token %}<input type="hidden" name="action" value="disable">
+            <button type="submit" class="btn btn--danger btn--sm">{% include "partials/icon.html" with name="x" %} Turn off sharing</button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
 {% if not meeting.is_terminal %}
-<script>setTimeout(function(){ location.reload(); }, 20000);</script>
+<script>
+  // Refresh the page while the bot is in flight so the timeline stays live.
+  setTimeout(function () { location.reload(); }, 15000);
+</script>
 {% endif %}
 {% endblock %}

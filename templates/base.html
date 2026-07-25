@@ -24,13 +24,9 @@
           {% if user.is_authenticated %}
             <a href="{% url 'meetings:dashboard' %}" class="nav__link">Dashboard</a>
             <a href="{% url 'meetings:about' %}" class="nav__link">About</a>
-            <div class="nav__user">
-              <span class="nav__avatar">{{ user.first_name_or_email|slice:":1"|upper }}</span>
-              <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
-                <button type="submit" class="nav__logout">Sign out</button>
-              </form>
-            </div>
+            <a href="{% url 'meetings:contact' %}" class="nav__link">Contact</a>
           {% else %}
+            <a href="{% url 'meetings:landing' %}#how" class="nav__link">How it works</a>
             <a href="{% url 'meetings:about' %}" class="nav__link">About</a>
             <a href="{% url 'meetings:contact' %}" class="nav__link">Contact</a>
             <a href="{% url 'accounts:login' %}" class="nav__link">Sign in</a>
@@ -38,9 +34,9 @@
         </nav>
         <div class="nav__right">
           {% if user.is_authenticated %}
-            <a href="{% url 'meetings:schedule' %}" class="btn btn--primary btn--sm nav__cta">Schedule a meeting</a>
+            <a href="{% url 'meetings:dashboard' %}" class="btn btn--primary btn--sm nav__cta">Open dashboard</a>
           {% else %}
-            <a href="{% url 'accounts:register' %}" class="btn btn--primary btn--sm nav__cta">Get started</a>
+            <a href="{% url 'accounts:register' %}" class="btn btn--primary btn--sm nav__cta">Get started free</a>
           {% endif %}
           <button type="button" class="nav__toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navMenu">
             <svg class="nav__toggle-icon nav__toggle-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -52,15 +48,13 @@
   </header>
 
   {% if messages %}
-    <div class="container">
-      <div class="flashes">
-        {% for message in messages %}
-          <div class="flash flash--{{ message.tags }}">
-            <span>{{ message }}</span>
-            <button class="flash__close" aria-label="Dismiss">&times;</button>
-          </div>
-        {% endfor %}
-      </div>
+    <div class="flashes">
+      {% for message in messages %}
+        <div class="flash flash--{{ message.tags }}">
+          <span>{{ message }}</span>
+          <button class="flash__close" aria-label="Dismiss">&times;</button>
+        </div>
+      {% endfor %}
     </div>
   {% endif %}
 

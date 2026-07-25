@@ -1,11 +1,55 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import (
+    AuthenticationForm,
+    PasswordChangeForm,
+    PasswordResetForm,
+    SetPasswordForm,
+)
 from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
 
 _INPUT = {"class": "field__input"}
+
+
+class StyledPasswordResetForm(PasswordResetForm):
+    email = forms.EmailField(
+        label="Email",
+        max_length=254,
+        widget=forms.EmailInput(attrs={**_INPUT, "placeholder": "you@company.com", "autocomplete": "email"}),
+    )
+
+
+class StyledSetPasswordForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        placeholders = {"new_password1": "New password", "new_password2": "Repeat new password"}
+        for name, field in self.fields.items():
+            field.widget.attrs.update({**_INPUT, "placeholder": placeholders.get(name, "")})
+
+
+class ProfileForm(forms.ModelForm):
+    full_name = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={**_INPUT, "placeholder": "Your name", "autocomplete": "name"}),
+    )
+
+    class Meta:
+        model = User
+        fields = ["full_name"]
+
+
+class StyledPasswordChangeForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        placeholders = {
+            "old_password": "Current password",
+            "new_password1": "New password",
+            "new_password2": "Repeat new password",
+        }
+        for name, field in self.fields.items():
+            field.widget.attrs.update({**_INPUT, "placeholder": placeholders.get(name, "")})
 
 
 class RegisterForm(forms.ModelForm):

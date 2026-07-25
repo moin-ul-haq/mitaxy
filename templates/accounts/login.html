@@ -1,27 +1,50 @@
-{% extends "base.html" %}
-{% block title %}Sign in{% endblock %}
-
-{% block content %}
-<div class="auth">
-  <div class="auth__card card card--pad">
-    <div class="auth__head">
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · {{ BRAND_NAME }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+</head>
+<body>
+<div class="auth-split">
+  {% include "accounts/_auth_side.html" %}
+  <div class="auth-main">
+    <div class="auth-card">
+      <div class="auth-topnav">
+        <a class="brand" href="{% url 'meetings:landing' %}">{% include "partials/logo.svg" %} <span class="brand__name">{{ BRAND_NAME }}</span></a>
+      </div>
       <h1>Welcome back</h1>
-      <p class="muted">Sign in to your {{ BRAND_NAME }} account.</p>
+      <p class="auth-card__sub">Sign in to your {{ BRAND_NAME }} account.</p>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="form-error-box" style="{% if message.tags == 'success' %}background:var(--green-bg); border-color:#a7f3d0; color:#065f46;{% endif %}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% if form.non_field_errors %}
+        <div class="form-error-box">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+      {% endif %}
+
+      {% include "accounts/_google_btn.html" with label="Sign in with Google" %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "partials/field.html" with field=form.username %}
+        {% include "partials/field.html" with field=form.password %}
+        <button type="submit" class="btn btn--primary btn--block btn--lg">Sign in</button>
+      </form>
+
+      <p class="auth__alt"><a href="{% url 'accounts:password_reset' %}">Forgot your password?</a></p>
+      <p class="auth__alt">New here? <a href="{% url 'accounts:register' %}">Create an account</a></p>
     </div>
-
-    {% if form.non_field_errors %}
-      <div class="form-error-box">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
-    {% endif %}
-
-    <form method="post" novalidate>
-      {% csrf_token %}
-      {% include "partials/field.html" with field=form.username %}
-      {% include "partials/field.html" with field=form.password %}
-      <button type="submit" class="btn btn--primary btn--block btn--lg">Sign in</button>
-    </form>
-
-    <p class="auth__alt"><a href="{% url 'accounts:password_reset' %}">Forgot your password?</a></p>
-    <p class="auth__alt">New here? <a href="{% url 'accounts:register' %}">Create an account</a></p>
   </div>
 </div>
-{% endblock %}
+<script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

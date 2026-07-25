@@ -1,0 +1,59 @@
+{# First-run product tour — shown until the user finishes or skips it. #}
+<div class="modal is-open" id="tourModal" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+  <div class="modal__backdrop"></div>
+  <div class="modal__panel tour__panel">
+
+    <div class="tour__step is-on" data-tour-step="0">
+      <div class="tour__art">{% include "partials/icon.html" with name="sparkle" %}</div>
+      <div class="tour__body">
+        <h3 id="tourTitle">Welcome to {{ BRAND_NAME }}, {{ user.first_name_or_email }}!</h3>
+        <p>{{ BRAND_NAME }} sends an AI notetaker into your meetings so you never have to
+           scribble notes again. Here's how it works — it takes 30 seconds.</p>
+      </div>
+    </div>
+
+    <div class="tour__step" data-tour-step="1">
+      <div class="tour__art">{% include "partials/icon.html" with name="link" %}</div>
+      <div class="tour__body">
+        <h3>1 · Paste your meeting link</h3>
+        <p>Click <strong>New meeting</strong> and paste any Zoom, Google Meet or Microsoft Teams
+           invite link. Pick a future time — or choose <strong>Deploy right now</strong> if the
+           meeting is already happening.</p>
+      </div>
+    </div>
+
+    <div class="tour__step" data-tour-step="2">
+      <div class="tour__art">{% include "partials/icon.html" with name="bot" %}</div>
+      <div class="tour__body">
+        <h3>2 · The bot joins and records</h3>
+        <p>At the right moment our notetaker joins the call. You can watch its live status on
+           your dashboard — connecting, waiting to be admitted, recording. Tip: admit it from
+           the waiting room like any other participant.</p>
+      </div>
+    </div>
+
+    <div class="tour__step" data-tour-step="3">
+      <div class="tour__art">{% include "partials/icon.html" with name="mail" %}</div>
+      <div class="tour__body">
+        <h3>3 · Notes land in your inbox</h3>
+        <p>Minutes after the call ends you get a clean summary, action items, key decisions and
+           the full transcript — on your dashboard and by email. Share them with teammates via a
+           private link whenever you like.</p>
+      </div>
+    </div>
+
+    <div class="tour__foot">
+      <div class="tour__dots">
+        <span class="tour__dot is-on"></span><span class="tour__dot"></span><span class="tour__dot"></span><span class="tour__dot"></span>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <form method="post" action="{% url 'accounts:onboarding_complete' %}" id="tourSkipForm">{% csrf_token %}
+          <button type="submit" class="tour__skip">Skip tour</button>
+        </form>
+        <button type="button" class="btn btn--primary btn--sm" id="tourNext">Next</button>
+      </div>
+    </div>
+
+    <form method="post" action="{% url 'accounts:onboarding_complete' %}" id="tourDoneForm" style="display:none;">{% csrf_token %}</form>
+  </div>
+</div>

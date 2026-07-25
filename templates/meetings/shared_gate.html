@@ -1,0 +1,58 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Private notes · {{ BRAND_NAME }}</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+</head>
+<body class="pub">
+  <header class="pub__nav">
+    <div class="pub__container pub__nav-inner">
+      <a class="brand" href="{% url 'meetings:landing' %}">
+        {% include "partials/logo.svg" %}
+        <span class="brand__name">{{ BRAND_NAME }}</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="pub__main">
+    <div class="pub__container">
+      <div class="card card--pad pub__gate center">
+        {% if sent %}
+          <div class="empty__art" style="background:var(--green-bg); color:var(--green);">
+            {% include "partials/icon.html" with name="mail" %}
+          </div>
+          <h2 style="font-size:1.3rem;">Check your inbox</h2>
+          <p class="muted">
+            If <b>{{ email }}</b> is on the access list, we've emailed it a personal link to these
+            notes. The link is valid for 7 days.
+          </p>
+          <p class="muted small" style="margin:0;">Wrong address? <a href="">Try a different email</a></p>
+        {% else %}
+          <div class="empty__art">{% include "partials/icon.html" with name="lock" %}</div>
+          <h2 style="font-size:1.3rem;">These notes are private</h2>
+          <p class="muted">
+            <b>{{ meeting.user.display_name }}</b> shared this meeting with specific people.
+            Enter your email — if you're on the list, we'll send you an access link.
+          </p>
+          {% if messages %}
+            {% for message in messages %}<div class="form-error-box">{{ message }}</div>{% endfor %}
+          {% endif %}
+          <form method="post" style="display:flex; gap:8px; margin-top:6px;">
+            {% csrf_token %}
+            <input type="email" name="email" required placeholder="you@company.com" class="field__input" style="flex:1;">
+            <button type="submit" class="btn btn--primary">Request access</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</body>
+</html>

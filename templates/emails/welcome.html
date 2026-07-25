@@ -1,20 +1,44 @@
 {% extends "emails/base_email.html" %}
+
+{% block preheader %}
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
+  Send a notetaker into your next call — here's how to get your first AI meeting notes.
+</div>
+{% endblock %}
+
 {% block email_content %}
-  <h1 style="margin:0 0 14px; font-size:22px; color:#0f172a;">Welcome to {{ brand_name }}, {{ user.first_name_or_email }} 👋</h1>
-  <p style="margin:0 0 16px; font-size:15px; color:#475569; line-height:1.7;">
-    Your account is ready. From now on you can send a {{ brand_name }} notetaker into any Zoom or Google Meet call — it records, transcribes, and emails you clean AI notes.
+  <p style="margin:0 0 8px; font-size:12px; color:#0f766e; font-weight:800; text-transform:uppercase; letter-spacing:.1em;">Welcome aboard</p>
+  <h1 style="margin:0 0 14px; font-size:23px; line-height:1.25; color:#0f172a; letter-spacing:-.02em;">Welcome to {{ brand_name }}, {{ user.first_name_or_email }}</h1>
+  <p style="margin:0 0 24px; font-size:15px; color:#475569; line-height:1.75;">
+    Your account is ready. From now on you can send a {{ brand_name }} notetaker into any
+    Zoom, Google Meet or Teams call — it records, transcribes, and emails you clean,
+    structured notes so you never have to scribble during a meeting again.
   </p>
-  <p style="margin:0 0 24px; font-size:15px; color:#475569; line-height:1.7;">
-    Here's how to get your first recap:
-  </p>
-  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 26px;">
-    <tr><td style="font-size:14px; color:#334155; padding:4px 0;">1️⃣ &nbsp; Paste your meeting link</td></tr>
-    <tr><td style="font-size:14px; color:#334155; padding:4px 0;">2️⃣ &nbsp; Pick the date &amp; time</td></tr>
-    <tr><td style="font-size:14px; color:#334155; padding:4px 0;">3️⃣ &nbsp; We email you the notes afterward</td></tr>
+
+  <!-- 3 steps -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; margin:0 0 26px;">
+    <tr><td style="padding:20px 22px;">
+      <p style="margin:0 0 14px; font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.08em;">Get your first recap in 3 steps</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="width:30px; vertical-align:top; padding:6px 0;"><div style="width:24px; height:24px; border-radius:8px; background:#0f766e; color:#fff; font-size:13px; font-weight:800; text-align:center; line-height:24px;">1</div></td>
+          <td style="font-size:14px; color:#334155; line-height:1.6; padding:6px 0 6px 10px;"><strong>Paste your meeting link</strong> — Zoom, Google Meet or Microsoft Teams.</td>
+        </tr>
+        <tr>
+          <td style="width:30px; vertical-align:top; padding:6px 0;"><div style="width:24px; height:24px; border-radius:8px; background:#0f766e; color:#fff; font-size:13px; font-weight:800; text-align:center; line-height:24px;">2</div></td>
+          <td style="font-size:14px; color:#334155; line-height:1.6; padding:6px 0 6px 10px;"><strong>Pick a time — or deploy right now</strong> if the meeting is already happening.</td>
+        </tr>
+        <tr>
+          <td style="width:30px; vertical-align:top; padding:6px 0;"><div style="width:24px; height:24px; border-radius:8px; background:#0f766e; color:#fff; font-size:13px; font-weight:800; text-align:center; line-height:24px;">3</div></td>
+          <td style="font-size:14px; color:#334155; line-height:1.6; padding:6px 0 6px 10px;"><strong>Get the notes by email</strong> — summary, action items, decisions and the full transcript.</td>
+        </tr>
+      </table>
+    </td></tr>
   </table>
+
   <table role="presentation" cellpadding="0" cellspacing="0">
-    <tr><td style="border-radius:10px; background-color:#0f766e;">
-      <a href="{{ site_url }}/schedule/" style="display:inline-block; padding:13px 26px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none;">Schedule your first meeting →</a>
+    <tr><td style="border-radius:10px; background:linear-gradient(135deg,#0f766e,#0d9488);">
+      <a href="{{ site_url }}/schedule/" style="display:inline-block; padding:13px 26px; font-size:15px; font-weight:700; color:#ffffff; text-decoration:none;">Schedule your first meeting →</a>
     </td></tr>
   </table>
 {% endblock %}

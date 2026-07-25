@@ -157,6 +157,21 @@ CSRF_COOKIE_SAMESITE = "Lax"
 X_FRAME_OPTIONS = "DENY"
 
 # ----------------------------------------------------------------------------
+# Cache (Redis db 7 — 5/6 are the Celery broker/results)
+# Used for: bot-advance locks, small hot lookups. Falls back to local memory
+# in dev if Redis isn't around.
+# ----------------------------------------------------------------------------
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("CACHE_URL", "redis://127.0.0.1:6379/7"),
+        "TIMEOUT": 300,
+    }
+}
+if env_bool("MITAXY_LOCMEM_CACHE", False):
+    CACHES["default"] = {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+
+# ----------------------------------------------------------------------------
 # Celery
 # ----------------------------------------------------------------------------
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", "redis://127.0.0.1:6379/5")
@@ -164,12 +179,22 @@ CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/6")
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 60 * 30
 CELERY_TIMEZONE = TIME_ZONE
+# Don't pile up prefetched slow tasks on one worker process.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 2
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BEAT_SCHEDULE = {
     "poll-pending-meetings": {
         "task": "meetings.tasks.poll_pending_meetings",
         "schedule": 60.0,  # every minute: drive bots through their lifecycle
     },
 }
+
+# ----------------------------------------------------------------------------
+# Bot lifecycle timeouts (minutes, env-tunable)
+# ----------------------------------------------------------------------------
+MITAXY_JOIN_TIMEOUT_MIN = int(env("MITAXY_JOIN_TIMEOUT_MIN", "30"))      # meeting never started
+MITAXY_WAITING_TIMEOUT_MIN = int(env("MITAXY_WAITING_TIMEOUT_MIN", "45"))  # nobody admitted the bot
+MITAXY_STALE_AFTER_MIN = int(env("MITAXY_STALE_AFTER_MIN", "360"))       # absolute ceiling
 
 # ----------------------------------------------------------------------------
 # Third-party integrations (Mitaxy pipeline)
@@ -186,6 +211,10 @@ GROQ_MODEL = env("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 RESEND_API_KEY = env("RESEND_API_KEY", "")
 RESEND_FROM = env("RESEND_FROM", "Mitaxy <onboarding@resend.dev>")
+
+# Google OAuth sign-in (optional — buttons appear only when both are set).
+GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", "")
 
 # Route all of Django's outgoing mail (password reset, etc.) through Resend.
 EMAIL_BACKEND = "accounts.email_backend.ResendEmailBackend"

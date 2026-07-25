@@ -1,56 +1,167 @@
-{% extends "base.html" %}
+{% extends "base_app.html" %}
 {% block title %}Dashboard{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'meetings:schedule' %}?now=1" class="btn btn--ghost btn--sm">
+  {% include "partials/icon.html" with name="bolt" %} Deploy bot now
+</a>
+<a href="{% url 'meetings:schedule' %}" class="btn btn--primary btn--sm">
+  {% include "partials/icon.html" with name="plus" %} New meeting
+</a>
+{% endblock %}
 
 {% block content %}
-<div class="container"
-     data-statuses-url="{% url 'meetings:statuses' %}"
-     data-has-active="{{ has_active|yesno:'true,false' }}">
+<div data-statuses-url="{% url 'meetings:statuses' %}" data-has-active="{{ has_active|yesno:'true,false' }}">
 
   <div class="section-head">
     <div>
-      <span class="eyebrow">Your meetings</span>
-      <h1>Hi {{ user.first_name_or_email }} 👋</h1>
+      <span class="eyebrow">Your workspace</span>
+      <h1>Hi {{ user.first_name_or_email }}</h1>
     </div>
-    <a href="{% url 'meetings:schedule' %}" class="btn btn--primary">+ Schedule a meeting</a>
   </div>
 
+  {% if is_new_user %}
+    <div class="gs">
+      <div class="gs__head">
+        <h2>Getting started with {{ BRAND_NAME }}</h2>
+      </div>
+      <div class="gs__list">
+        <div class="gs__item">
+          <span class="gs__num">1</span>
+          <div>
+            <h4>Paste a meeting link</h4>
+            <p>Zoom, Google Meet or Microsoft Teams — any call you're invited to.</p>
+          </div>
+        </div>
+        <div class="gs__item">
+          <span class="gs__num">2</span>
+          <div>
+            <h4>Schedule or deploy now</h4>
+            <p>Pick a future time, or send the bot in immediately if the call is live.</p>
+          </div>
+        </div>
+        <div class="gs__item">
+          <span class="gs__num">3</span>
+          <div>
+            <h4>Get notes by email</h4>
+            <p>Summary, action items and full transcript — then share them with anyone.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
   <div class="stats">
-    <div class="stat"><div class="stat__num">{{ counts.total }}</div><div class="stat__label">Total meetings</div></div>
-    <div class="stat"><div class="stat__num">{{ counts.upcoming }}</div><div class="stat__label">Upcoming / in progress</div></div>
-    <div class="stat"><div class="stat__num">{{ counts.completed }}</div><div class="stat__label">Notes ready</div></div>
+    <div class="stat">
+      <span class="stat__icon stat__icon--teal">{% include "partials/icon.html" with name="video" %}</span>
+      <div><div class="stat__num">{{ counts.total }}</div><div class="stat__label">Total meetings</div></div>
+    </div>
+    <div class="stat">
+      <span class="stat__icon stat__icon--blue">{% include "partials/icon.html" with name="calendar" %}</span>
+      <div><div class="stat__num">{{ counts.upcoming }}</div><div class="stat__label">Scheduled</div></div>
+    </div>
+    <div class="stat">
+      <span class="stat__icon stat__icon--amber">{% include "partials/icon.html" with name="activity" %}</span>
+      <div><div class="stat__num">{{ counts.live }}</div><div class="stat__label">In progress</div></div>
+    </div>
+    <div class="stat">
+      <span class="stat__icon stat__icon--green">{% include "partials/icon.html" with name="check" %}</span>
+      <div><div class="stat__num">{{ counts.completed }}</div><div class="stat__label">Notes ready</div></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <nav class="tabs" aria-label="Filter meetings">
+      <a class="tabs__tab {% if tab == 'all' %}is-active{% endif %}" href="?tab=all{% if query %}&q={{ query|urlencode }}{% endif %}">All</a>
+      <a class="tabs__tab {% if tab == 'upcoming' %}is-active{% endif %}" href="?tab=upcoming{% if query %}&q={{ query|urlencode }}{% endif %}">Scheduled</a>
+      <a class="tabs__tab {% if tab == 'live' %}is-active{% endif %}" href="?tab=live{% if query %}&q={{ query|urlencode }}{% endif %}">In progress</a>
+      <a class="tabs__tab {% if tab == 'done' %}is-active{% endif %}" href="?tab=done{% if query %}&q={{ query|urlencode }}{% endif %}">Completed</a>
+    </nav>
+    <form method="get" class="searchbox" role="search">
+      <input type="hidden" name="tab" value="{{ tab }}">
+      {% include "partials/icon.html" with name="search" %}
+      <input type="search" name="q" value="{{ query }}" placeholder="Search meetings…" aria-label="Search meetings">
+    </form>
   </div>
 
   {% if meetings %}
     <div class="meeting-list">
       {% for m in meetings %}
         <div class="m-row">
-          <div class="m-row__icon">{{ m.get_platform_display|slice:":1" }}</div>
+          {% include "partials/platform_icon.html" with platform=m.platform %}
           <div class="m-row__body">
             <a class="m-row__title" href="{{ m.get_absolute_url }}">{{ m.display_title }}</a>
-            <span class="m-row__meta">{{ m.get_platform_display }} · {{ m.scheduled_at|date:"M j, Y · g:i A" }}{% if m.bot_name %} · {% include "partials/icon.html" with name="bot" %} {{ m.bot_name }}{% endif %}</span>
+            <span class="m-row__meta">
+              {% include "partials/icon.html" with name="calendar" %} {{ m.scheduled_at|date:"M j, Y · g:i A" }}
+              <span class="m-row__dotsep"></span>
+              {% include "partials/icon.html" with name="bot" %} {{ m.bot_name|default:"Mitaxy Notetaker" }}
+            </span>
           </div>
           <div class="m-row__right">
-            <span class="badge {{ m.badge_class }}" data-meeting-badge="{{ m.pk }}">{{ m.get_status_display }}</span>
-            {% if m.can_deploy_now %}
-              <form method="post" action="{% url 'meetings:deploy_now' m.pk %}" onsubmit="return confirm('Deploy the bot into this meeting right now?');" style="margin:0;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn--ghost btn--sm">{% include "partials/icon.html" with name="bolt" %} Deploy now</button>
-              </form>
-            {% endif %}
-            {% if m.is_completed %}
-              <a href="{{ m.get_absolute_url }}" class="m-row__arrow" aria-label="View notes">View →</a>
-            {% endif %}
+            <div class="m-row__status">
+              <span class="badge {{ m.badge_class }}" data-meeting-badge="{{ m.pk }}">{{ m.get_status_display }}</span>
+              {% if not m.is_terminal %}
+                <span class="m-row__hint" data-meeting-hint="{{ m.pk }}">{{ m.status_hint }}</span>
+              {% endif %}
+            </div>
+            <div class="m-row__actions">
+              {% if m.can_deploy_now %}
+                <form method="post" action="{% url 'meetings:deploy_now' m.pk %}" data-confirm="Deploy the bot into this meeting right now?" style="margin:0;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn--soft btn--sm">{% include "partials/icon.html" with name="bolt" %} Deploy now</button>
+                </form>
+              {% endif %}
+              {% if m.is_completed %}
+                <a href="{{ m.get_absolute_url }}" class="btn btn--ghost btn--sm">View notes</a>
+              {% else %}
+                <a href="{{ m.get_absolute_url }}" class="btn btn--ghost btn--sm">Details</a>
+              {% endif %}
+            </div>
           </div>
         </div>
       {% endfor %}
     </div>
+
+    {% if page.paginator.num_pages > 1 %}
+      <nav class="pager" aria-label="Pagination">
+        {% if page.has_previous %}
+          <a class="pager__btn" href="?tab={{ tab }}&q={{ query|urlencode }}&page={{ page.previous_page_number }}">
+            {% include "partials/icon.html" with name="arrow-left" %} Prev
+          </a>
+        {% endif %}
+        <span class="pager__info">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}
+          <a class="pager__btn" href="?tab={{ tab }}&q={{ query|urlencode }}&page={{ page.next_page_number }}">
+            Next {% include "partials/icon.html" with name="arrow-right" %}
+          </a>
+        {% endif %}
+      </nav>
+    {% endif %}
+
   {% else %}
     <div class="card empty">
-      <div class="empty__art">{% include "partials/icon.html" with name="calendar" %}</div>
-      <h2>No meetings yet</h2>
-      <p class="muted">Schedule your first meeting and {{ BRAND_NAME }} will handle the rest.</p>
-      <a href="{% url 'meetings:schedule' %}" class="btn btn--primary btn--lg">Schedule a meeting</a>
+      <div class="empty__art">
+        {% if query %}{% include "partials/icon.html" with name="search" %}{% else %}{% include "partials/icon.html" with name="calendar" %}{% endif %}
+      </div>
+      {% if query %}
+        <h2>No meetings match “{{ query }}”</h2>
+        <p class="muted">Try a different search, or clear the filter.</p>
+        <a href="{% url 'meetings:dashboard' %}" class="btn btn--ghost">Clear search</a>
+      {% elif tab != 'all' %}
+        <h2>Nothing here yet</h2>
+        <p class="muted">No meetings in this view right now.</p>
+        <a href="{% url 'meetings:dashboard' %}" class="btn btn--ghost">Show all meetings</a>
+      {% else %}
+        <h2>No meetings yet</h2>
+        <p class="muted">Schedule your first meeting and {{ BRAND_NAME }} will handle the rest.</p>
+        <a href="{% url 'meetings:schedule' %}" class="btn btn--primary btn--lg">
+          {% include "partials/icon.html" with name="plus" %} Schedule your first meeting
+        </a>
+      {% endif %}
     </div>
   {% endif %}
 </div>
+
+{% if show_onboarding %}{% include "partials/onboarding.html" %}{% endif %}
 {% endblock %}

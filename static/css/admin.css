@@ -1,0 +1,72 @@
+/* Mitaxy admin theme — teal brand over Django's default admin */
+:root {
+  --primary: #0f766e;
+  --secondary: #0d5c55;
+  --accent: #14b8a6;
+  --header-color: #ffffff;
+  --header-branding-color: #ffffff;
+  --header-bg: #0f172a;
+  --header-link-color: #ccfbf1;
+  --breadcrumbs-fg: #0f766e;
+  --breadcrumbs-link-fg: #134e4a;
+  --breadcrumbs-bg: #f0fdfa;
+  --link-fg: #0f766e;
+  --link-hover-color: #0d9488;
+  --button-bg: #0f766e;
+  --button-hover-bg: #134e4a;
+  --default-button-bg: #0d9488;
+  --default-button-hover-bg: #0f766e;
+  --object-tools-bg: #334155;
+  --object-tools-hover-bg: #0f172a;
+}
+
+#header { border-bottom: 3px solid var(--accent); }
+#site-name a { color: #fff !important; }
+
+div.breadcrumbs { border-bottom: 1px solid #ccfbf1; }
+
+.module h2, .module caption, .inline-group h2 {
+  background: #f0fdfa;
+  color: #134e4a;
+  font-weight: 700;
+}
+
+/* Dashboard stat cards (admin index) */
+.mx-dash { margin: 4px 0 24px; }
+.mx-dash__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+.mx-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+}
+.mx-card__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #64748b;
+  font-weight: 700;
+}
+.mx-card__num {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+.mx-card__sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.mx-teal  { color: #0d9488 !important; }
+.mx-green { color: #047857 !important; }
+.mx-red   { color: #b91c1c !important; }
+.mx-amber { color: #b45309 !important; }
+
+@media (prefers-color-scheme: dark) {
+  .mx-card { background: #1e293b; border-color: #334155; }
+  .mx-card__num { color: #f1f5f9; }
+  .module h2, .module caption, .inline-group h2 { background: #134e4a; color: #ccfbf1; }
+}

@@ -1,0 +1,114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dashboard{% endblock %} · {{ BRAND_NAME }}</title>
+  <meta name="description" content="{{ BRAND_TAGLINE }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+</head>
+<body>
+<div class="app" id="appShell">
+  <div class="side__backdrop" id="sideBackdrop"></div>
+
+  <aside class="side" id="sideNav" aria-label="Main navigation">
+    <a class="side__brand" href="{% url 'meetings:dashboard' %}">
+      {% include "partials/logo.svg" %}
+      <span>{{ BRAND_NAME }}</span>
+    </a>
+
+    <div class="side__cta">
+      <a href="{% url 'meetings:schedule' %}" class="btn btn--primary">
+        {% include "partials/icon.html" with name="plus" %} New meeting
+      </a>
+    </div>
+
+    <nav class="side__nav">
+      {% with url_name=request.resolver_match.url_name %}
+      <a href="{% url 'meetings:dashboard' %}" class="side__link {% if url_name == 'dashboard' or url_name == 'detail' %}is-active{% endif %}">
+        {% include "partials/icon.html" with name="home" %} Dashboard
+      </a>
+      <a href="{% url 'meetings:schedule' %}" class="side__link {% if url_name == 'schedule' %}is-active{% endif %}">
+        {% include "partials/icon.html" with name="calendar" %} Schedule a bot
+      </a>
+      <a href="{% url 'accounts:settings' %}" class="side__link {% if url_name == 'settings' %}is-active{% endif %}">
+        {% include "partials/icon.html" with name="settings" %} Settings
+      </a>
+      {% endwith %}
+    </nav>
+
+    <div class="side__section">Help</div>
+    <nav class="side__nav">
+      <a href="{% url 'meetings:landing' %}#faq" class="side__link">
+        {% include "partials/icon.html" with name="help" %} FAQ
+      </a>
+      <a href="{% url 'meetings:contact' %}" class="side__link">
+        {% include "partials/icon.html" with name="chat" %} Contact us
+      </a>
+      <form method="post" action="{% url 'accounts:onboarding_restart' %}">{% csrf_token %}
+        <button type="submit" class="side__link" style="width:100%; background:none; border:none; cursor:pointer; font:inherit; text-align:left;">
+          {% include "partials/icon.html" with name="sparkle" %} Replay the tour
+        </button>
+      </form>
+      {% if user.is_staff %}
+        <a href="/admin/" class="side__link">
+          {% include "partials/icon.html" with name="shield" %} Admin panel
+        </a>
+      {% endif %}
+    </nav>
+
+    <div class="side__spacer"></div>
+
+    <div class="side__user">
+      <span class="side__avatar">{{ user.first_name_or_email|slice:":1"|upper }}</span>
+      <span class="side__user-meta">
+        <span class="side__user-name">{{ user.display_name }}</span>
+        <span class="side__user-mail">{{ user.email }}</span>
+      </span>
+      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+        <button type="submit" class="side__signout" title="Sign out" aria-label="Sign out">
+          {% include "partials/icon.html" with name="logout" %}
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <div class="work">
+    <header class="topbar">
+      <div class="topbar__title">
+        <button type="button" class="topbar__burger" id="sideToggle" aria-label="Open menu">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        {% block topbar_title %}Dashboard{% endblock %}
+      </div>
+      <div class="topbar__actions">{% block topbar_actions %}{% endblock %}</div>
+    </header>
+
+    <main class="work__body">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+{% if messages %}
+  <div class="flashes">
+    {% for message in messages %}
+      <div class="flash flash--{{ message.tags }}">
+        <span>{{ message }}</span>
+        <button class="flash__close" aria-label="Dismiss">&times;</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% block modals %}{% endblock %}
+
+<script src="{% static 'js/app.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

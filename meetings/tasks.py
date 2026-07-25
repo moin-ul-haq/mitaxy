@@ -1,8 +1,10 @@
 """
 Celery tasks that drive a meeting from "scheduled" to "completed":
 
-  poll_pending_meetings  (beat, every 60s) -> advances each bot's status,
-                          and when the call is over, kicks off process_meeting.
+  poll_pending_meetings  (beat, every 60s) -> fans out one advance_meeting task
+                          per in-flight bot, so many bots progress in parallel.
+  advance_meeting        -> reads the bot's Recall status, updates our status,
+                          logs user-visible activity events, applies timeouts.
   process_meeting        -> recording -> Deepgram -> Groq notes -> email.
 
 The poll is the reliable engine (no Recall webhook configuration required);
@@ -13,6 +15,8 @@ from datetime import timedelta
 
 from celery import shared_task
 from celery.exceptions import MaxRetriesExceededError, Retry
+from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 
 from .models import (
@@ -29,28 +33,55 @@ from .services.mailer import send_html_email
 
 logger = logging.getLogger("mitaxy")
 
-# If a meeting is this far past its start with no recording, give up.
-STALE_AFTER = timedelta(hours=6)
+ACTIVE_STATUSES = [
+    MeetingStatus.SCHEDULED,
+    MeetingStatus.JOINING,
+    MeetingStatus.WAITING,
+    MeetingStatus.RECORDING,
+]
+
+
+def _minutes(setting_name, default):
+    try:
+        return timedelta(minutes=int(getattr(settings, setting_name, default)))
+    except (TypeError, ValueError):
+        return timedelta(minutes=default)
 
 
 @shared_task(ignore_result=True)
 def poll_pending_meetings():
-    """Advance every in-flight meeting based on its Recall bot status."""
-    active = Meeting.objects.filter(
-        status__in=[
-            MeetingStatus.SCHEDULED,
-            MeetingStatus.JOINING,
-            MeetingStatus.RECORDING,
-        ]
-    ).exclude(recall_bot_id="")
+    """Fan out one advance task per in-flight meeting (parallel, non-blocking)."""
+    ids = (
+        Meeting.objects.filter(status__in=ACTIVE_STATUSES)
+        .exclude(recall_bot_id="")
+        .values_list("pk", flat=True)
+    )
+    for pk in ids:
+        advance_meeting.delay(pk)
 
-    for meeting in active:
+
+@shared_task(ignore_result=True)
+def advance_meeting(meeting_id: int):
+    """Advance a single meeting based on its Recall bot status."""
+    # Redis lock: a slow Recall call must not overlap with the next beat tick.
+    lock_key = f"mitaxy:advance:{meeting_id}"
+    if not cache.add(lock_key, 1, timeout=55):
+        return
+    try:
+        meeting = Meeting.objects.filter(pk=meeting_id, status__in=ACTIVE_STATUSES).first()
+        if meeting is None or not meeting.recall_bot_id:
+            return
         try:
             _advance(meeting)
         except recall.RecallError as exc:
+            # Transient API trouble: log it, keep the meeting in play — the next
+            # poll retries. The stale-guard below still bounds how long we wait.
             logger.warning("poll: recall error for meeting %s: %s", meeting.pk, exc)
+            _apply_timeouts(meeting)
         except Exception:
             logger.exception("poll: unexpected error for meeting %s", meeting.pk)
+    finally:
+        cache.delete(lock_key)
 
 
 def _advance(meeting: Meeting):
@@ -58,35 +89,74 @@ def _advance(meeting: Meeting):
     code = recall.latest_status_code(bot)
     meeting.bot_status_detail = (code or "")[:200]
 
+    if code:
+        meeting.log_event(code, recall.friendly_status(code))
+
     if code in recall.FATAL_CODES:
-        meeting.status = MeetingStatus.FAILED
-        meeting.error_message = f"The bot could not record this meeting (status: {code})."
-        meeting.save(update_fields=["status", "error_message", "bot_status_detail", "updated_at"])
+        reason = recall.fatal_reason(code)
+        meeting.set_status(MeetingStatus.FAILED, error=reason, extra_fields=["bot_status_detail"])
+        meeting.log_event("failed", reason)
         return
 
     if code in recall.DONE_CODES:
         # Call finished — hand off to processing exactly once.
-        meeting.status = MeetingStatus.PROCESSING
-        meeting.save(update_fields=["status", "bot_status_detail", "updated_at"])
+        meeting.set_status(MeetingStatus.PROCESSING, extra_fields=["bot_status_detail"])
+        meeting.log_event("processing", "Preparing the recording for transcription")
         process_meeting.delay(meeting.pk)
         return
 
     if code in recall.IN_CALL_CODES:
         new_status = MeetingStatus.RECORDING
+    elif code in recall.WAITING_ROOM_CODES:
+        new_status = MeetingStatus.WAITING
     elif code in recall.JOINING_CODES:
-        new_status = MeetingStatus.JOINING
+        # Before the scheduled time the bot is parked; that's still "scheduled".
+        if meeting.status == MeetingStatus.SCHEDULED and meeting.scheduled_at > timezone.now():
+            new_status = MeetingStatus.SCHEDULED
+        else:
+            new_status = MeetingStatus.JOINING
     else:
         new_status = meeting.status
 
-    # Timeout guard for bots that never get anywhere.
-    if timezone.now() - meeting.scheduled_at > STALE_AFTER:
-        meeting.status = MeetingStatus.FAILED
-        meeting.error_message = "Timed out waiting for the meeting recording."
-        meeting.save(update_fields=["status", "error_message", "bot_status_detail", "updated_at"])
+    meeting.set_status(new_status, extra_fields=["bot_status_detail"])
+    _apply_timeouts(meeting)
+
+
+def _apply_timeouts(meeting: Meeting):
+    """Fail bots that will clearly never produce a recording — with a clear reason.
+
+    - WAITING:   nobody admitted the bot from the waiting room.
+    - JOINING:   the meeting never actually started (host never showed up).
+    - any:       hard ceiling so nothing lingers forever.
+    """
+    now = timezone.now()
+    in_status_for = now - meeting.status_changed_at
+
+    waiting_timeout = _minutes("MITAXY_WAITING_TIMEOUT_MIN", 45)
+    join_timeout = _minutes("MITAXY_JOIN_TIMEOUT_MIN", 30)
+    stale_after = _minutes("MITAXY_STALE_AFTER_MIN", 360)
+
+    if meeting.status == MeetingStatus.WAITING and in_status_for > waiting_timeout:
+        reason = (
+            "The bot waited in the waiting room but nobody admitted it "
+            f"within {int(waiting_timeout.total_seconds() // 60)} minutes."
+        )
+    elif meeting.status == MeetingStatus.JOINING and in_status_for > join_timeout:
+        reason = (
+            "The meeting never started — the bot kept trying to join for "
+            f"{int(join_timeout.total_seconds() // 60)} minutes."
+        )
+    elif (
+        meeting.status in (MeetingStatus.SCHEDULED, MeetingStatus.JOINING, MeetingStatus.WAITING)
+        and meeting.scheduled_at < now - stale_after
+    ):
+        reason = "Timed out waiting for the meeting recording."
+    else:
         return
 
-    meeting.status = new_status
-    meeting.save(update_fields=["status", "bot_status_detail", "updated_at"])
+    recall.delete_bot(meeting.recall_bot_id)  # best-effort cleanup
+    meeting.set_status(MeetingStatus.FAILED, error=reason)
+    meeting.log_event("failed", reason)
 
 
 @shared_task(bind=True, max_retries=10, default_retry_delay=60)
@@ -119,6 +189,7 @@ def process_meeting(self, meeting_id: int):
         )
 
         # 2) Transcription (Deepgram, with speaker labels)
+        meeting.log_event("transcribing", "Transcribing the audio")
         result = deepgram.transcribe_url(media_url)
         Transcript.objects.update_or_create(
             meeting=meeting,
@@ -129,6 +200,7 @@ def process_meeting(self, meeting_id: int):
         )
 
         # 3) AI notes (Groq)
+        meeting.log_event("summarizing", "Writing your meeting notes")
         notes_data = ai.generate_notes(result["full_text"])
         MeetingNotes.objects.update_or_create(
             meeting=meeting,
@@ -141,13 +213,12 @@ def process_meeting(self, meeting_id: int):
         )
 
         # 4) Email the notes
+        meeting.log_event("emailing", "Emailing your notes")
         _email_notes(meeting)
 
         # 5) Done
-        meeting.status = MeetingStatus.COMPLETED
-        meeting.completed_at = timezone.now()
-        meeting.error_message = ""
-        meeting.save(update_fields=["status", "completed_at", "error_message", "updated_at"])
+        meeting.set_status(MeetingStatus.COMPLETED, error="")
+        meeting.log_event("completed", "Notes ready — emailed and available on your dashboard")
         logger.info("meeting %s processed successfully", meeting_id)
 
     except Retry:  # raised by self.retry() — let Celery reschedule
@@ -157,9 +228,9 @@ def process_meeting(self, meeting_id: int):
         try:
             raise self.retry(exc=exc, countdown=120)
         except MaxRetriesExceededError:
-            meeting.status = MeetingStatus.FAILED
-            meeting.error_message = f"Processing failed: {exc}"[:500]
-            meeting.save(update_fields=["status", "error_message", "updated_at"])
+            reason = f"Processing failed: {exc}"[:500]
+            meeting.set_status(MeetingStatus.FAILED, error=reason)
+            meeting.log_event("failed", "Processing failed — our team has been notified")
 
 
 def _email_notes(meeting: Meeting):
@@ -203,3 +274,35 @@ def send_account_email(user_id, subject, template, extra_context=None):
     ctx = {"user": user}
     ctx.update(extra_context or {})
     send_html_email(to=user.email, subject=subject, template=template, context=ctx)
+
+
+@shared_task(ignore_result=True)
+def send_share_invites(share_id: int, emails: list, personal_links: dict):
+    """Email each invited person their personal access link to a shared summary."""
+    from .models import MeetingShare
+
+    share = (
+        MeetingShare.objects.select_related("meeting", "meeting__user")
+        .filter(pk=share_id, is_active=True)
+        .first()
+    )
+    if share is None:
+        return
+    meeting = share.meeting
+    owner = meeting.user
+    for email in emails:
+        link = personal_links.get(email) or share.url
+        ok = send_html_email(
+            to=email,
+            subject=f"{owner.display_name} shared meeting notes with you",
+            template="share_invite",
+            context={"meeting": meeting, "share": share, "owner": owner,
+                     "access_url": link, "recipient": email},
+        )
+        EmailLog.objects.create(
+            meeting=meeting,
+            recipient=email,
+            kind=EmailKind.SHARE_INVITE,
+            status="sent" if ok else "failed",
+            error="" if ok else "Resend send failed (see server logs).",
+        )

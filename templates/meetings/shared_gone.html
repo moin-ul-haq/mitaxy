@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Link unavailable · {{ BRAND_NAME }}</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+</head>
+<body class="pub">
+  <header class="pub__nav">
+    <div class="pub__container pub__nav-inner">
+      <a class="brand" href="{% url 'meetings:landing' %}">
+        {% include "partials/logo.svg" %}
+        <span class="brand__name">{{ BRAND_NAME }}</span>
+      </a>
+    </div>
+  </header>
+  <main class="pub__main">
+    <div class="pub__container">
+      <div class="card card--pad pub__gate center">
+        <div class="empty__art" style="background:var(--slate-100); color:var(--slate-500);">
+          {% include "partials/icon.html" with name="link" %}
+        </div>
+        <h2 style="font-size:1.3rem;">This link is no longer available</h2>
+        <p class="muted" style="margin-bottom:18px;">
+          The owner turned off sharing or replaced the link. Ask them to send you a fresh one.
+        </p>
+        <a href="{% url 'meetings:landing' %}" class="btn btn--ghost">Go to {{ BRAND_NAME }}</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

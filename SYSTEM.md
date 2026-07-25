@@ -5,6 +5,17 @@
 > notes (summary, action items, decisions, follow-ups), emails them, and stores everything in a
 > searchable dashboard. **Tagline:** *Never sit through a meeting again.*
 
+**V3 update (2026-07-25):** major release — professional app-shell frontend (dark sidebar
+workspace), onboarding tour for new users, meeting-notes **sharing** (public link or
+restricted-by-email with personal signed links, optional transcript), **Google sign-in**
+(env-driven: `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`), "**Deploy right now**" option on the
+schedule form (date optional), full bot lifecycle engine (waiting-room status, joining/waiting
+timeouts with friendly errors, per-meeting user-visible **activity timeline** `MeetingEvent`),
+customized branded Django admin with stats dashboard, redesigned HTML emails, Redis cache (db 7),
+parallel per-meeting status polling, and **pull-based CI/CD**: push to `main` → server auto-deploys
+within ~2 min (`deploy/auto_deploy.sh` + `mitaxy-deploy.timer`, log at `/var/log/mitaxy-deploy.log`).
+Live at **https://mitaxy.moinit.dev** (HTTPS via Let's Encrypt). See `deploy/README.md` for ops.
+
 This document is the single source of truth for what the system is, how it's built, where every piece
 lives, why each technology was chosen, and how to operate it.
 
@@ -14,8 +25,8 @@ lives, why each technology was chosen, and how to operate it.
 
 | | |
 |---|---|
-| **Live URL** | http://212.47.72.184/ (HTTP — no domain/SSL yet) |
-| **Admin** | http://212.47.72.184/admin/ (`admin@mitaxy.local`) |
+| **Live URL** | https://mitaxy.moinit.dev (HTTPS, Let's Encrypt; raw IP also serves) |
+| **Admin** | https://mitaxy.moinit.dev/admin/ (`admin@mitaxy.local`) |
 | **Source repo** | https://github.com/moin-ul-haq/mitaxy (public) |
 | **Server** | `root@212.47.72.184` — Ubuntu 24.04, 4 vCPU, 8 GB RAM, 72 GB disk |
 | **App directory** | `/root/mitaxy` |

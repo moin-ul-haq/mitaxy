@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ meeting.display_title }} · Shared notes · {{ BRAND_NAME }}</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+</head>
+<body class="pub">
+  <header class="pub__nav">
+    <div class="pub__container pub__nav-inner">
+      <a class="brand" href="{% url 'meetings:landing' %}">
+        {% include "partials/logo.svg" %}
+        <span class="brand__name">{{ BRAND_NAME }}</span>
+      </a>
+      <a href="{% url 'accounts:register' %}" class="btn btn--ghost btn--sm">Try {{ BRAND_NAME }} free</a>
+    </div>
+  </header>
+
+  <main class="pub__main">
+    <div class="pub__container">
+      <div class="pub__head">
+        <span class="eyebrow">Shared meeting notes</span>
+        <h1 style="font-size:1.7rem; margin-top:6px;">{{ meeting.display_title }}</h1>
+        <div class="pub__byline">
+          {% include "partials/icon.html" with name="user" %} Shared by <b>{{ meeting.user.display_name }}</b>
+          <span class="m-row__dotsep"></span>
+          {% include "partials/icon.html" with name="calendar" %} {{ meeting.scheduled_at|date:"M j, Y · g:i A" }}
+          {% if recording and recording.duration_seconds %}
+            <span class="m-row__dotsep"></span>
+            {% include "partials/icon.html" with name="clock" %} {{ recording.duration_display }}
+          {% endif %}
+        </div>
+      </div>
+
+      {% if notes %}
+        <div class="card card--pad summary-card" style="margin-bottom:16px;">
+          <h3><span class="note-card__dot" style="background:var(--teal-600);"></span> Summary</h3>
+          <p>{{ notes.summary|default:"No summary available." }}</p>
+        </div>
+
+        <div class="notes-grid">
+          <div class="card card--pad note-card">
+            <h3><span class="note-card__dot" style="background:var(--green-500);"></span> Action items</h3>
+            {% if notes.action_items %}
+              <ul class="note-list">{% for item in notes.action_items %}<li>{{ item }}</li>{% endfor %}</ul>
+            {% else %}<p class="muted">None captured.</p>{% endif %}
+          </div>
+          <div class="card card--pad note-card">
+            <h3><span class="note-card__dot" style="background:var(--blue-500);"></span> Key decisions</h3>
+            {% if notes.key_decisions %}
+              <ul class="note-list">{% for item in notes.key_decisions %}<li>{{ item }}</li>{% endfor %}</ul>
+            {% else %}<p class="muted">None captured.</p>{% endif %}
+          </div>
+          <div class="card card--pad note-card">
+            <h3><span class="note-card__dot" style="background:var(--amber-500);"></span> Follow-ups</h3>
+            {% if notes.follow_ups %}
+              <ul class="note-list">{% for item in notes.follow_ups %}<li>{{ item }}</li>{% endfor %}</ul>
+            {% else %}<p class="muted">None captured.</p>{% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="card card--pad center"><p class="muted" style="margin:0;">The notes for this meeting aren't available.</p></div>
+      {% endif %}
+
+      {% if transcript %}
+        {% if transcript.speaker_segments %}
+          <div class="card card--pad" style="margin-top:2px;">
+            <h3 style="margin-bottom:14px;">Full transcript</h3>
+            <div class="transcript">
+              {% for seg in transcript.speaker_segments %}
+                {% if seg.text %}
+                <div class="transcript__line">
+                  <span class="transcript__spk">{{ seg.speaker }}</span>
+                  <span class="transcript__text">{{ seg.text }}</span>
+                </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% elif transcript.full_text %}
+          <div class="card card--pad" style="margin-top:2px;">
+            <h3 style="margin-bottom:14px;">Full transcript</h3>
+            <p style="white-space:pre-wrap; color:var(--slate-700);">{{ transcript.full_text }}</p>
+          </div>
+        {% endif %}
+      {% endif %}
+
+      <div class="cta-band" style="margin-top:34px; padding:38px 28px;">
+        <h2 style="font-size:1.4rem;">Want notes like this from your own meetings?</h2>
+        <p>{{ BRAND_NAME }} sends an AI notetaker into your calls and emails you the summary.</p>
+        <a href="{% url 'accounts:register' %}" class="btn btn--dark btn--lg" style="background:#fff; color:var(--teal-900);">Get started free</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,94 +1,175 @@
 {% extends "base.html" %}
-{% block title %}{{ BRAND_NAME }} — {{ BRAND_TAGLINE }}{% endblock %}
+{% block title %}{{ BRAND_TAGLINE }}{% endblock %}
 
 {% block content %}
-<section class="container hero">
-  <span class="hero__pill">● Works with Zoom &amp; Google Meet</span>
-  <h1>Send a bot to your meetings.<br><span class="hero__grad">Get the notes. Skip the call.</span></h1>
-  <p class="hero__sub">{{ BRAND_NAME }} joins your Zoom or Google Meet on your behalf, records and transcribes everything, then emails you a clean AI summary with action items and decisions.</p>
-  <div class="hero__cta">
-    <a href="{% url 'accounts:register' %}" class="btn btn--primary btn--lg">Start free</a>
-    <a href="{% url 'accounts:login' %}" class="btn btn--ghost btn--lg">Sign in</a>
-  </div>
-  <p class="hero__note">No credit card. No app to install. Your notes land in your inbox.</p>
-</section>
+<div class="container">
 
-<section class="container">
-  <div class="steps">
-    <div class="step"><div class="step__num">1</div><h3>Schedule</h3><p>Paste your meeting link and pick a time.</p></div>
-    <div class="step"><div class="step__num">2</div><h3>Bot joins</h3><p>A notetaker enters the call — no device of yours needed.</p></div>
-    <div class="step"><div class="step__num">3</div><h3>Transcribe</h3><p>Every word captured with speaker labels.</p></div>
-    <div class="step"><div class="step__num">4</div><h3>AI notes</h3><p>Summary, action items &amp; decisions, generated automatically.</p></div>
-    <div class="step"><div class="step__num">5</div><h3>Delivered</h3><p>A polished email lands in your inbox.</p></div>
-  </div>
-</section>
+  <!-- Hero -->
+  <section class="hero">
+    <span class="hero__pill">{% include "partials/icon.html" with name="sparkle" %} AI notetaker for Zoom, Google Meet &amp; Teams</span>
+    <h1>Never sit through a meeting <span class="hero__grad">just to take notes</span></h1>
+    <p class="hero__sub">
+      Paste your meeting link. A {{ BRAND_NAME }} bot joins the call, records it, and emails you a
+      clean summary with action items, decisions and the full transcript.
+    </p>
+    <div class="hero__cta">
+      <a href="{% url 'accounts:register' %}" class="btn btn--primary btn--lg">Start free</a>
+      <a href="#how" class="btn btn--ghost btn--lg">See how it works</a>
+    </div>
+    <p class="hero__note">No credit card required · Works with your existing meeting links</p>
 
-<section class="container">
-  <div class="section-head"><div><span class="eyebrow">Why {{ BRAND_NAME }}</span><h2>Everything from one pasted link</h2></div></div>
-  <div class="features">
-    <div class="card feature">
-      <div class="feature__icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+    <!-- Product preview (pure CSS) -->
+    <div class="mock" aria-hidden="true">
+      <div class="mock__bar"><span class="mock__dot"></span><span class="mock__dot"></span><span class="mock__dot"></span></div>
+      <div class="mock__body">
+        <div class="mock__side">
+          <div class="mock__side-brand">{% include "partials/logo.svg" %} {{ BRAND_NAME }}</div>
+          <div class="mock__side-item is-on">Dashboard</div>
+          <div class="mock__side-item">Schedule a bot</div>
+          <div class="mock__side-item">Settings</div>
+        </div>
+        <div class="mock__main">
+          <div class="mock__stats">
+            <div class="mock__stat"><b>24</b><span>Meetings</span></div>
+            <div class="mock__stat"><b>2</b><span>In progress</span></div>
+            <div class="mock__stat"><b>21</b><span>Notes ready</span></div>
+          </div>
+          <div class="mock__row">
+            <span class="plat plat--meet" style="width:34px;height:34px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span>
+            <div style="flex:1;">
+              <div class="mock__row-title">Weekly product sync</div>
+              <div class="mock__row-sub">Google Meet · Today, 2:00 PM</div>
+            </div>
+            <span class="badge is-active">Recording</span>
+          </div>
+          <div class="mock__row">
+            <span class="plat plat--zoom" style="width:34px;height:34px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></span>
+            <div style="flex:1;">
+              <div class="mock__row-title">Client kickoff call</div>
+              <div class="mock__row-sub">Zoom · Today, 4:30 PM</div>
+            </div>
+            <span class="badge is-scheduled">Scheduled</span>
+          </div>
+          <div class="mock__row">
+            <span class="plat plat--teams" style="width:34px;height:34px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg></span>
+            <div style="flex:1;">
+              <div class="mock__row-title">Hiring debrief</div>
+              <div class="mock__row-sub">Teams · Yesterday</div>
+            </div>
+            <span class="badge is-completed">Notes ready</span>
+          </div>
+        </div>
       </div>
-      <h3>Records for you</h3><p class="muted">A server-side bot captures full audio — you never have to show up or hit record.</p>
+    </div>
+  </section>
+
+  <!-- Platforms -->
+  <section class="logos">
+    <p>Works where your meetings happen</p>
+    <div class="logos__row">
+      <span class="icon-h">{% include "partials/icon.html" with name="video" %} Zoom</span>
+      <span class="icon-h">{% include "partials/icon.html" with name="video" %} Google Meet</span>
+      <span class="icon-h">{% include "partials/icon.html" with name="users" %} Microsoft Teams</span>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how" class="steps">
+    <div class="step">
+      <div class="step__num">1</div>
+      <h3>Paste your link</h3>
+      <p>Drop in any Zoom, Meet or Teams invite link — no plugins, no calendar access needed.</p>
+    </div>
+    <div class="step">
+      <div class="step__num">2</div>
+      <h3>Pick a time — or go now</h3>
+      <p>Schedule the bot for later, or deploy it instantly into a meeting that's already running.</p>
+    </div>
+    <div class="step">
+      <div class="step__num">3</div>
+      <h3>The bot records</h3>
+      <p>It joins like a participant, waits politely in the lobby, and records once admitted.</p>
+    </div>
+    <div class="step">
+      <div class="step__num">4</div>
+      <h3>Notes hit your inbox</h3>
+      <p>Summary, action items, decisions and the transcript — minutes after the call ends.</p>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="card feature">
+      <div class="feature__icon">{% include "partials/icon.html" with name="bot" %}</div>
+      <h3>A bot that shows up on time</h3>
+      <p>Scheduled bots join at the exact minute. Live meetings? Deploy instantly with one click.</p>
     </div>
     <div class="card feature">
-      <div class="feature__icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      </div>
-      <h3>Knows who said what</h3><p class="muted">Speaker-labelled transcripts so the notes actually make sense afterward.</p>
+      <div class="feature__icon">{% include "partials/icon.html" with name="mic" %}</div>
+      <h3>Speaker-labelled transcripts</h3>
+      <p>Know who said what — accurate transcription with automatic speaker separation.</p>
     </div>
     <div class="card feature">
-      <div class="feature__icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </div>
-      <h3>Action items, sorted</h3><p class="muted">AI pulls out decisions, owners and follow-ups — not just a wall of text.</p>
+      <div class="feature__icon">{% include "partials/icon.html" with name="sparkle" %}</div>
+      <h3>Notes that write themselves</h3>
+      <p>AI distills the whole call into a summary, action items, key decisions and follow-ups.</p>
     </div>
     <div class="card feature">
-      <div class="feature__icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
-      </div>
-      <h3>Straight to your inbox</h3><p class="muted">A clean, formatted summary email, plus a searchable dashboard of every meeting.</p>
+      <div class="feature__icon">{% include "partials/icon.html" with name="share" %}</div>
+      <h3>Share with anyone</h3>
+      <p>Send notes to teammates with a private link — open to everyone, or only people you pick.</p>
     </div>
-  </div>
-</section>
+    <div class="card feature">
+      <div class="feature__icon">{% include "partials/icon.html" with name="activity" %}</div>
+      <h3>Live bot status</h3>
+      <p>Watch every step on your dashboard — connecting, waiting to be admitted, recording, done.</p>
+    </div>
+    <div class="card feature">
+      <div class="feature__icon">{% include "partials/icon.html" with name="mail" %}</div>
+      <h3>Delivered to your inbox</h3>
+      <p>Beautiful email recaps the moment processing finishes — no need to log back in.</p>
+    </div>
+  </section>
 
-<section class="container" id="faq">
-  <div class="section-head"><div class="center" style="width:100%;"><span class="eyebrow">FAQ</span><h2>Questions, answered</h2></div></div>
-  <div class="faq">
-    <details class="faq__item">
-      <summary>Which meeting platforms does {{ BRAND_NAME }} support?</summary>
-      <p>Zoom and Google Meet today. Just paste the meeting link when you schedule — {{ BRAND_NAME }} detects the platform automatically.</p>
-    </details>
-    <details class="faq__item">
-      <summary>Do I need to install anything or stay on the call?</summary>
-      <p>No. The bot runs entirely on our servers and joins on your behalf. Nothing runs on your device, and you don't have to attend.</p>
-    </details>
-    <details class="faq__item">
-      <summary>Can I change the name the bot shows in the meeting?</summary>
-      <p>Yes. Every time you schedule a meeting you can set the bot's display name, so participants see exactly what you want.</p>
-    </details>
-    <details class="faq__item">
-      <summary>What's in the notes I receive?</summary>
-      <p>A concise summary, action items (with owners where mentioned), key decisions, and follow-ups — plus the full speaker-labelled transcript in your dashboard.</p>
-    </details>
-    <details class="faq__item">
-      <summary>Can I make the bot join right now instead of later?</summary>
-      <p>Absolutely. Each scheduled meeting has a <strong>Deploy now</strong> button that sends the bot into the call immediately.</p>
-    </details>
-    <details class="faq__item">
-      <summary>Is my meeting data private?</summary>
-      <p>Your recordings, transcripts and notes are tied to your account and only visible to you. We never share your data.</p>
-    </details>
-  </div>
-</section>
+  <!-- FAQ -->
+  <section id="faq" style="margin-top:56px;">
+    <div class="center" style="margin-bottom:26px;">
+      <span class="eyebrow">FAQ</span>
+      <h2>Questions, answered</h2>
+    </div>
+    <div class="faq">
+      <details class="faq__item">
+        <summary>How does the bot join my meeting?</summary>
+        <p>It joins from our servers like a normal participant, using the meeting link you paste. If the host has a waiting room, the bot waits to be admitted — just let it in like anyone else.</p>
+      </details>
+      <details class="faq__item">
+        <summary>What if my meeting is already running?</summary>
+        <p>Choose “Deploy right now” when creating the meeting — no date or time needed. The bot connects within moments.</p>
+      </details>
+      <details class="faq__item">
+        <summary>Which platforms are supported?</summary>
+        <p>Zoom, Google Meet and Microsoft Teams links are supported today.</p>
+      </details>
+      <details class="faq__item">
+        <summary>Do meeting participants know it's there?</summary>
+        <p>Yes — the bot appears in the participant list under a name you choose (e.g. “Mitaxy Notetaker”), so everyone knows the call is being recorded.</p>
+      </details>
+      <details class="faq__item">
+        <summary>Can I share the notes with people who don't have an account?</summary>
+        <p>Yes. Every completed meeting has a share option: anyone-with-the-link, or restricted to specific email addresses — each invitee gets a personal access link.</p>
+      </details>
+      <details class="faq__item">
+        <summary>What happens if nobody admits the bot?</summary>
+        <p>The bot waits patiently in the lobby. If it's never admitted, the meeting is marked failed with a clear explanation — you'll see exactly what happened on the dashboard.</p>
+      </details>
+    </div>
+  </section>
 
-<section class="container">
-  <div class="cta-band">
-    <h2>Never sit through a status meeting again</h2>
-    <p>Let {{ BRAND_NAME }} attend, listen and summarize. You read the recap in two minutes.</p>
-    <a href="{% url 'accounts:register' %}" class="btn btn--ghost btn--lg">Create your free account</a>
-  </div>
-</section>
+  <!-- CTA -->
+  <section class="cta-band">
+    <h2>Your next meeting takes notes for itself</h2>
+    <p>Set up your first notetaker in under a minute.</p>
+    <a href="{% url 'accounts:register' %}" class="btn btn--lg" style="background:#fff; color:var(--teal-900);">Get started free</a>
+  </section>
+</div>
 {% endblock %}
-{% block body_class %}page-landing{% endblock %}

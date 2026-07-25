@@ -1,0 +1,41 @@
+{% extends "admin/index.html" %}
+{% load mitaxy_admin %}
+
+{% block content %}
+{% admin_dashboard_stats as stats %}
+<div class="mx-dash">
+  <div class="mx-dash__grid">
+    <div class="mx-card">
+      <div class="mx-card__label">Total meetings</div>
+      <div class="mx-card__num">{{ stats.meetings.total }}</div>
+      <div class="mx-card__sub">+{{ stats.meetings.this_week }} this week</div>
+    </div>
+    <div class="mx-card">
+      <div class="mx-card__label">Live right now</div>
+      <div class="mx-card__num mx-teal">{{ stats.meetings.live }}</div>
+      <div class="mx-card__sub">{{ stats.meetings.scheduled }} scheduled</div>
+    </div>
+    <div class="mx-card">
+      <div class="mx-card__label">Completed</div>
+      <div class="mx-card__num mx-green">{{ stats.meetings.completed }}</div>
+      <div class="mx-card__sub">{{ stats.meetings.failed }} failed</div>
+    </div>
+    <div class="mx-card">
+      <div class="mx-card__label">Users</div>
+      <div class="mx-card__num">{{ stats.users.total }}</div>
+      <div class="mx-card__sub">+{{ stats.users.this_week }} this week</div>
+    </div>
+    <div class="mx-card">
+      <div class="mx-card__label">Emails sent</div>
+      <div class="mx-card__num">{{ stats.emails.total }}</div>
+      <div class="mx-card__sub {% if stats.emails.failed %}mx-red{% endif %}">{{ stats.emails.failed }} failed</div>
+    </div>
+    <div class="mx-card">
+      <div class="mx-card__label">Contact inbox</div>
+      <div class="mx-card__num {% if stats.unhandled_contacts %}mx-amber{% endif %}">{{ stats.unhandled_contacts }}</div>
+      <div class="mx-card__sub">awaiting reply</div>
+    </div>
+  </div>
+</div>
+{{ block.super }}
+{% endblock %}

@@ -1,34 +1,63 @@
-{% extends "base.html" %}
+{% extends "base_app.html" %}
 {% block title %}Schedule a meeting{% endblock %}
+{% block topbar_title %}Schedule a bot{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width:620px;">
-  <a href="{% url 'meetings:dashboard' %}" class="back-link">← Back to dashboard</a>
+<div style="max-width:640px; margin:0 auto;">
+  <a href="{% url 'meetings:dashboard' %}" class="back-link">
+    {% include "partials/icon.html" with name="arrow-left" %} Back to dashboard
+  </a>
 
   <div class="card card--pad">
-    <div class="auth__head" style="text-align:left;">
+    <div style="margin-bottom:20px;">
       <span class="eyebrow">New meeting</span>
-      <h1 style="font-size:1.6rem; margin-top:6px;">Schedule a notetaker</h1>
-      <p class="muted">Paste your Zoom or Google Meet link. {{ BRAND_NAME }} will join at the time you pick, record it, and email you the notes.</p>
+      <h1 style="font-size:1.5rem; margin-top:6px;">Send a notetaker to your meeting</h1>
+      <p class="muted" style="margin:0;">Paste your meeting link — {{ BRAND_NAME }} joins, records, and emails you the notes.</p>
     </div>
 
     {% if form.non_field_errors %}
       <div class="form-error-box">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
     {% endif %}
 
-    <form method="post" novalidate>
+    <form method="post" novalidate id="scheduleForm">
       {% csrf_token %}
-      {% include "partials/field.html" with field=form.title %}
+
+      <div class="field">
+        <label class="field__label">{{ form.start_mode.label }}</label>
+        <div class="seg" id="startModeSeg">
+          <input type="radio" name="start_mode" value="later" id="modeLater"
+                 {% if form.start_mode.value != "now" %}checked{% endif %}>
+          <label class="seg__opt" for="modeLater">
+            {% include "partials/icon.html" with name="calendar" %} Schedule for later
+            <small>Bot joins at the time you pick</small>
+          </label>
+          <input type="radio" name="start_mode" value="now" id="modeNow"
+                 {% if form.start_mode.value == "now" %}checked{% endif %}>
+          <label class="seg__opt" for="modeNow">
+            {% include "partials/icon.html" with name="bolt" %} Deploy right now
+            <small>Meeting is happening — join immediately</small>
+          </label>
+        </div>
+        {% for error in form.start_mode.errors %}<div class="field__error">{{ error }}</div>{% endfor %}
+      </div>
+
       {% include "partials/field.html" with field=form.meeting_url %}
+      <div id="scheduledAtField">
+        {% include "partials/field.html" with field=form.scheduled_at %}
+      </div>
+      {% include "partials/field.html" with field=form.title %}
       {% include "partials/field.html" with field=form.bot_name %}
-      {% include "partials/field.html" with field=form.scheduled_at %}
       {% include "partials/field.html" with field=form.notes_email %}
-      <button type="submit" class="btn btn--primary btn--block btn--lg">Schedule bot</button>
+
+      <button type="submit" class="btn btn--primary btn--block btn--lg" id="scheduleSubmit"
+              data-label-later="Schedule the bot" data-label-now="Deploy the bot now">
+        Schedule the bot
+      </button>
     </form>
   </div>
 
-  <p class="muted center" style="margin-top:18px; font-size:.85rem;">
-    {% include "partials/icon.html" with name="lock" %} The bot joins on the server — nothing runs on your device.
+  <p class="muted center small" style="margin-top:18px;">
+    {% include "partials/icon.html" with name="lock" %} The bot joins from our servers — nothing runs on your device.
   </p>
 </div>
 {% endblock %}

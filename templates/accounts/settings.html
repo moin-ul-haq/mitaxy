@@ -1,0 +1,62 @@
+{% extends "base_app.html" %}
+{% block title %}Settings{% endblock %}
+{% block topbar_title %}Settings{% endblock %}
+
+{% block content %}
+<div style="max-width:860px; margin:0 auto;">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Your account</span>
+      <h1>Settings</h1>
+    </div>
+  </div>
+
+  <div class="settings-grid">
+    <div class="card card--pad settings-card">
+      <h3>{% include "partials/icon.html" with name="user" %} Profile</h3>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="section" value="profile">
+        {% include "partials/field.html" with field=profile_form.full_name %}
+        <div class="field">
+          <label class="field__label">Email</label>
+          <input class="field__input" type="email" value="{{ user.email }}" disabled>
+          <div class="field__hint">Your email is your sign-in — it can't be changed here.</div>
+        </div>
+        <div class="field">
+          <label class="field__label">Signs in with</label>
+          <span class="provider-chip">
+            {% if user.auth_provider == "google" %}
+              <svg viewBox="0 0 24 24" style="width:15px;height:15px;" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.1 3.56-5.17 3.56-8.81Z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.72-4.95H1.27v3.1A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.28 14.29a7.2 7.2 0 0 1 0-4.58v-3.1H1.27a12 12 0 0 0 0 10.78l4.01-3.1Z"/><path fill="#EA4335" d="M12 4.76c1.76 0 3.35.6 4.6 1.8l3.44-3.45A11.97 11.97 0 0 0 12 0 12 12 0 0 0 1.27 6.61l4.01 3.1C6.22 6.87 8.87 4.76 12 4.76Z"/></svg>
+              Google account
+            {% else %}
+              {% include "partials/icon.html" with name="mail" %} Email &amp; password
+            {% endif %}
+          </span>
+        </div>
+        <button type="submit" class="btn btn--primary">Save profile</button>
+      </form>
+    </div>
+
+    <div class="card card--pad settings-card">
+      <h3>{% include "partials/icon.html" with name="lock" %} Password</h3>
+      {% if has_password %}
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="section" value="password">
+          {% include "partials/field.html" with field=password_form.old_password %}
+          {% include "partials/field.html" with field=password_form.new_password1 %}
+          {% include "partials/field.html" with field=password_form.new_password2 %}
+          <button type="submit" class="btn btn--primary">Change password</button>
+        </form>
+      {% else %}
+        <p class="muted">
+          You signed up with Google, so there's no password on this account.
+          To add one, use <a href="{% url 'accounts:password_reset' %}">password reset</a> —
+          we'll email you a link to set it.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

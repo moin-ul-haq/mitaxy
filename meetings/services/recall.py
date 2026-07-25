@@ -8,10 +8,25 @@ import logging
 
 import requests
 from django.conf import settings
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logger = logging.getLogger("mitaxy")
 
 TIMEOUT = 30
+
+# Shared session: connection pooling + automatic retries on transient failures.
+# Retries only cover idempotent GET/DELETE — a POST (create_bot) is never
+# auto-retried, so we can't accidentally dispatch two bots into one call.
+_session = requests.Session()
+_retry = Retry(
+    total=3,
+    backoff_factor=1.5,
+    status_forcelist=(429, 500, 502, 503, 504),
+    allowed_methods=frozenset(["GET", "DELETE"]),
+    raise_on_status=False,
+)
+_session.mount("https://", HTTPAdapter(max_retries=_retry, pool_maxsize=20))
 
 
 class RecallError(Exception):
@@ -47,13 +62,19 @@ def create_bot(meeting_url: str, join_at_utc_iso: str = None, bot_name: str = No
     }
     if join_at_utc_iso:
         payload["join_at"] = join_at_utc_iso
-    resp = requests.post(url, json=payload, headers=_headers(), timeout=TIMEOUT)
+    try:
+        resp = _session.post(url, json=payload, headers=_headers(), timeout=TIMEOUT)
+    except requests.RequestException as exc:
+        raise RecallError(f"create_bot network error: {exc}")
 
     # Some Recall accounts/plans reject an explicit recording_config — retry minimal.
     if resp.status_code in (400, 422):
         logger.warning("Recall create_bot 4xx with recording_config (%s); retrying minimal", resp.text[:200])
         payload.pop("recording_config", None)
-        resp = requests.post(url, json=payload, headers=_headers(), timeout=TIMEOUT)
+        try:
+            resp = _session.post(url, json=payload, headers=_headers(), timeout=TIMEOUT)
+        except requests.RequestException as exc:
+            raise RecallError(f"create_bot network error: {exc}")
 
     if resp.status_code not in (200, 201):
         raise RecallError(f"create_bot failed ({resp.status_code}): {resp.text[:400]}")
@@ -61,7 +82,10 @@ def create_bot(meeting_url: str, join_at_utc_iso: str = None, bot_name: str = No
 
 
 def get_bot(bot_id: str) -> dict:
-    resp = requests.get(f"{_base_url()}/bot/{bot_id}/", headers=_headers(), timeout=TIMEOUT)
+    try:
+        resp = _session.get(f"{_base_url()}/bot/{bot_id}/", headers=_headers(), timeout=TIMEOUT)
+    except requests.RequestException as exc:
+        raise RecallError(f"get_bot network error: {exc}")
     if resp.status_code != 200:
         raise RecallError(f"get_bot failed ({resp.status_code}): {resp.text[:300]}")
     return resp.json()
@@ -72,7 +96,7 @@ def delete_bot(bot_id: str) -> bool:
     if not bot_id:
         return False
     try:
-        resp = requests.delete(f"{_base_url()}/bot/{bot_id}/", headers=_headers(), timeout=TIMEOUT)
+        resp = _session.delete(f"{_base_url()}/bot/{bot_id}/", headers=_headers(), timeout=TIMEOUT)
         return resp.status_code in (200, 202, 204, 404)
     except requests.RequestException:
         logger.warning("delete_bot network error for %s", bot_id)
@@ -93,9 +117,53 @@ def latest_status_code(bot: dict) -> str:
 
 # Status codes that mean "the call is over, recording should be ready soon".
 DONE_CODES = {"done", "call_ended", "media_expired", "analysis_done"}
-FATAL_CODES = {"fatal", "error", "bot_rejected", "call_not_found", "meeting_not_found", "timeout"}
+FATAL_CODES = {
+    "fatal", "error", "bot_rejected", "bot_removed", "call_not_found",
+    "meeting_not_found", "timeout", "recording_permission_denied",
+}
 IN_CALL_CODES = {"in_call_recording", "recording_permission_allowed", "in_call_not_recording"}
-JOINING_CODES = {"joining_call", "ready", "in_waiting_room"}
+WAITING_ROOM_CODES = {"in_waiting_room"}
+JOINING_CODES = {"joining_call", "ready", "scheduled"}
+
+# User-facing copy for the bot activity timeline, keyed by Recall status code.
+FRIENDLY_STATUS = {
+    "ready": "Bot is ready and standing by",
+    "scheduled": "Bot is scheduled and standing by",
+    "joining_call": "Bot is connecting to the meeting",
+    "in_waiting_room": "Bot is in the waiting room — waiting for the host to admit it",
+    "in_call_not_recording": "Bot joined the call — waiting for permission to record",
+    "recording_permission_allowed": "Recording permission granted",
+    "in_call_recording": "Bot is in the call and recording",
+    "call_ended": "The call ended — preparing the recording",
+    "done": "Recording finished",
+    "analysis_done": "Recording finished",
+    "bot_rejected": "The host declined to admit the bot",
+    "bot_removed": "The bot was removed from the call by the host",
+    "recording_permission_denied": "The host denied recording permission",
+    "call_not_found": "The meeting could not be found — check the link",
+    "meeting_not_found": "The meeting could not be found — check the link",
+    "timeout": "The bot timed out trying to join",
+    "fatal": "The bot hit an unexpected error",
+    "error": "The bot hit an unexpected error",
+}
+
+# Human explanation used in Meeting.error_message when a bot fails.
+FATAL_REASON = {
+    "bot_rejected": "The host declined to admit the bot into the call.",
+    "bot_removed": "The bot was removed from the call by the host.",
+    "recording_permission_denied": "The host denied recording permission, so nothing could be captured.",
+    "call_not_found": "The meeting could not be found. Double-check the meeting link.",
+    "meeting_not_found": "The meeting could not be found. Double-check the meeting link.",
+    "timeout": "The bot timed out while trying to join the meeting.",
+}
+
+
+def friendly_status(code: str) -> str:
+    return FRIENDLY_STATUS.get(code, f"Bot status: {code}" if code else "Waiting for the bot")
+
+
+def fatal_reason(code: str) -> str:
+    return FATAL_REASON.get(code, f"The bot could not record this meeting (status: {code}).")
 
 
 def _walk_urls(obj, found):
