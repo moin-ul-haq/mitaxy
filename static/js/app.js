@@ -1,5 +1,28 @@
 // Mitaxy — small UI helpers (no framework)
 (function () {
+  // Mobile nav: hamburger toggle
+  var nav = document.querySelector(".nav");
+  var navToggle = document.getElementById("navToggle");
+  if (nav && navToggle) {
+    var setOpen = function (open) {
+      nav.classList.toggle("is-open", open);
+      navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+    navToggle.addEventListener("click", function () {
+      setOpen(!nav.classList.contains("is-open"));
+    });
+    // Close after tapping any menu item
+    nav.querySelectorAll("#navMenu a, #navMenu button").forEach(function (el) {
+      el.addEventListener("click", function () { setOpen(false); });
+    });
+    // Close on Escape, on outside click, and when resizing up to desktop
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
+    document.addEventListener("click", function (e) {
+      if (nav.classList.contains("is-open") && !nav.contains(e.target)) setOpen(false);
+    });
+    window.addEventListener("resize", function () { if (window.innerWidth > 640) setOpen(false); });
+  }
+
   // Dismiss flash messages
   document.addEventListener("click", function (e) {
     if (e.target.classList.contains("flash__close")) {

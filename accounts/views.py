@@ -8,8 +8,6 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 
-from meetings.services.mailer import send_html_email
-
 from .forms import EmailLoginForm, RegisterForm
 
 logger = logging.getLogger("mitaxy")
@@ -27,13 +25,13 @@ class RegisterView(CreateView):
 
     def form_valid(self, form):
         user = form.save()
-        # Welcome email (best-effort)
-        send_html_email(
-            to=user.email,
-            subject="Welcome to Mitaxy",
-            template="welcome",
-            context={"user": user},
-        )
+        # Welcome email (best-effort, off the request thread via Celery).
+        from meetings.tasks import send_account_email
+
+        try:
+            send_account_email.delay(user.pk, "Welcome to Mitaxy", "welcome", {})
+        except Exception:
+            logger.exception("welcome email enqueue failed")
         # Log the user straight in (fires the login-alert signal too).
         login(self.request, user, backend="accounts.backends.EmailBackend")
         messages.success(self.request, "Your account is ready. Welcome aboard!")

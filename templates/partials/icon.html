@@ -1,0 +1,17 @@
+{% spaceless %}
+<svg class="ico {{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{% if name == "calendar" %}<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+{% elif name == "bot" %}<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M12 9V5"/><circle cx="12" cy="3.5" r="1.3"/><circle cx="8.5" cy="14.5" r="1.2"/><circle cx="15.5" cy="14.5" r="1.2"/><path d="M2 14h2"/><path d="M20 14h2"/>
+{% elif name == "clock" %}<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>
+{% elif name == "mail" %}<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 6L2 6"/>
+{% elif name == "video" %}<path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/>
+{% elif name == "bolt" %}<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+{% elif name == "alert" %}<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+{% elif name == "check" %}<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+{% elif name == "target" %}<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>
+{% elif name == "lock" %}<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+{% elif name == "chat" %}<path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2Z"/>
+{% elif name == "help" %}<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+{% endif %}
+</svg>
+{% endspaceless %}

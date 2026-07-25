@@ -23,15 +23,15 @@
     </div>
     <div class="contact-aside">
       <div class="card card--pad" style="margin-bottom:16px;">
-        <h3>📧 Email</h3>
+        <h3 class="icon-h">{% include "partials/icon.html" with name="mail" %} Email</h3>
         <p class="muted" style="margin:0;">support@mitaxy.app</p>
       </div>
       <div class="card card--pad" style="margin-bottom:16px;">
-        <h3>💬 Response time</h3>
+        <h3 class="icon-h">{% include "partials/icon.html" with name="chat" %} Response time</h3>
         <p class="muted" style="margin:0;">We usually reply within one business day.</p>
       </div>
       <div class="card card--pad">
-        <h3>❓ Quick answers</h3>
+        <h3 class="icon-h">{% include "partials/icon.html" with name="help" %} Quick answers</h3>
         <p class="muted" style="margin:0;">Check the <a href="{% url 'meetings:landing' %}#faq">FAQ</a> for the most common questions.</p>
       </div>
     </div>

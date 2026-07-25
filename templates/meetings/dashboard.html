@@ -27,14 +27,14 @@
           <div class="m-row__icon">{{ m.get_platform_display|slice:":1" }}</div>
           <div class="m-row__body">
             <a class="m-row__title" href="{{ m.get_absolute_url }}">{{ m.display_title }}</a>
-            <span class="m-row__meta">{{ m.get_platform_display }} · {{ m.scheduled_at|date:"M j, Y · g:i A" }}{% if m.bot_name %} · 🤖 {{ m.bot_name }}{% endif %}</span>
+            <span class="m-row__meta">{{ m.get_platform_display }} · {{ m.scheduled_at|date:"M j, Y · g:i A" }}{% if m.bot_name %} · {% include "partials/icon.html" with name="bot" %} {{ m.bot_name }}{% endif %}</span>
           </div>
           <div class="m-row__right">
             <span class="badge {{ m.badge_class }}" data-meeting-badge="{{ m.pk }}">{{ m.get_status_display }}</span>
             {% if m.can_deploy_now %}
               <form method="post" action="{% url 'meetings:deploy_now' m.pk %}" onsubmit="return confirm('Deploy the bot into this meeting right now?');" style="margin:0;">
                 {% csrf_token %}
-                <button type="submit" class="btn btn--ghost btn--sm">⚡ Deploy now</button>
+                <button type="submit" class="btn btn--ghost btn--sm">{% include "partials/icon.html" with name="bolt" %} Deploy now</button>
               </form>
             {% endif %}
             {% if m.is_completed %}
@@ -46,7 +46,7 @@
     </div>
   {% else %}
     <div class="card empty">
-      <div class="empty__art">📅</div>
+      <div class="empty__art">{% include "partials/icon.html" with name="calendar" %}</div>
       <h2>No meetings yet</h2>
       <p class="muted">Schedule your first meeting and {{ BRAND_NAME }} will handle the rest.</p>
       <a href="{% url 'meetings:schedule' %}" class="btn btn--primary btn--lg">Schedule a meeting</a>

@@ -109,6 +109,17 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# Argon2 first: faster *and* stronger than the default PBKDF2 (which ran ~0.5s on
+# this shared CPU and dominated login latency). Existing PBKDF2 password hashes
+# still verify via the fallbacks below and transparently re-hash to Argon2 on the
+# user's next successful login. Requires argon2-cffi (in requirements.txt).
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.ScryptPasswordHasher",
+]
+
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "meetings:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"

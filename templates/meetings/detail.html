@@ -14,24 +14,24 @@
   </div>
 
   <div class="detail-meta">
-    <span>📅 <b>{{ meeting.scheduled_at|date:"M j, Y · g:i A" }}</b></span>
-    {% if meeting.bot_name %}<span>🤖 <b>{{ meeting.bot_name }}</b></span>{% endif %}
-    {% if recording and recording.duration_seconds %}<span>⏱️ <b>{{ recording.duration_display }}</b></span>{% endif %}
-    <span>✉️ <b>{{ meeting.notes_email }}</b></span>
-    {% if recording and recording.media_url %}<span>🎥 <a href="{{ recording.media_url }}" target="_blank" rel="noopener">Recording</a></span>{% endif %}
+    <span>{% include "partials/icon.html" with name="calendar" %} <b>{{ meeting.scheduled_at|date:"M j, Y · g:i A" }}</b></span>
+    {% if meeting.bot_name %}<span>{% include "partials/icon.html" with name="bot" %} <b>{{ meeting.bot_name }}</b></span>{% endif %}
+    {% if recording and recording.duration_seconds %}<span>{% include "partials/icon.html" with name="clock" %} <b>{{ recording.duration_display }}</b></span>{% endif %}
+    <span>{% include "partials/icon.html" with name="mail" %} <b>{{ meeting.notes_email }}</b></span>
+    {% if recording and recording.media_url %}<span>{% include "partials/icon.html" with name="video" %} <a href="{{ recording.media_url }}" target="_blank" rel="noopener">Recording</a></span>{% endif %}
   </div>
 
   {% if meeting.can_deploy_now %}
     <form method="post" action="{% url 'meetings:deploy_now' meeting.pk %}" onsubmit="return confirm('Deploy the bot into this meeting right now?');" style="margin:0 0 22px;">
       {% csrf_token %}
-      <button type="submit" class="btn btn--primary">⚡ Deploy bot now</button>
+      <button type="submit" class="btn btn--primary">{% include "partials/icon.html" with name="bolt" %} Deploy bot now</button>
       <span class="muted" style="margin-left:10px; font-size:.88rem;">Joins immediately instead of at the scheduled time.</span>
     </form>
   {% endif %}
 
   {% if meeting.status == "failed" %}
     <div class="card card--pad center">
-      <div class="empty__art">⚠️</div>
+      <div class="empty__art">{% include "partials/icon.html" with name="alert" %}</div>
       <h2>Something went wrong</h2>
       <p class="muted">{{ meeting.error_message|default:"We couldn't process this meeting." }}</p>
     </div>

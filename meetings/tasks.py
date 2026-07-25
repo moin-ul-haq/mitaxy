@@ -186,3 +186,20 @@ def _email_notes(meeting: Meeting):
         status="sent" if ok else "failed",
         error="" if ok else "Resend send failed (see server logs).",
     )
+
+
+@shared_task(ignore_result=True)
+def send_account_email(user_id, subject, template, extra_context=None):
+    """Render + send a branded account email (login alert, welcome) off the
+    request thread, so the Resend HTTP round-trip never blocks the login/
+    register response. Best-effort: a missing user or send failure is logged,
+    not raised."""
+    from django.contrib.auth import get_user_model
+
+    user = get_user_model().objects.filter(pk=user_id).first()
+    if user is None:
+        logger.warning("send_account_email: user %s no longer exists", user_id)
+        return
+    ctx = {"user": user}
+    ctx.update(extra_context or {})
+    send_html_email(to=user.email, subject=subject, template=template, context=ctx)
