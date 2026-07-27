@@ -50,6 +50,9 @@ Optional:
 - `MITAXY_JOIN_TIMEOUT_MIN` (30), `MITAXY_WAITING_TIMEOUT_MIN` (45),
   `MITAXY_STALE_AFTER_MIN` (360) — bot lifecycle timeouts.
 - `CACHE_URL` (default `redis://127.0.0.1:6379/7`).
+- Voice agent: `VOICE_PORT` (8791), `VOICE_MAX_SESSIONS` (8), `VOICE_TTS_MODEL`
+  (aura-asteria-en) — service `mitaxy-voice` (unit in this dir; nginx proxies
+  `/voice-ws/` to it with websocket upgrade).
 
 **After editing `.env`, restart all three services** — celery reads it at boot:
 `systemctl restart mitaxy mitaxy-celery mitaxy-celerybeat`

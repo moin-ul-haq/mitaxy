@@ -14,7 +14,12 @@ timeouts with friendly errors, per-meeting user-visible **activity timeline** `M
 customized branded Django admin with stats dashboard, redesigned HTML emails, Redis cache (db 7),
 parallel per-meeting status polling, and **pull-based CI/CD**: push to `main` → server auto-deploys
 within ~2 min (`deploy/auto_deploy.sh` + `mitaxy-deploy.timer`, log at `/var/log/mitaxy-deploy.log`).
-Live at **https://mitaxy.moinit.dev** (HTTPS via Let's Encrypt). See `deploy/README.md` for ops.
+**Voice agent (2026-07-27):** opt-in per meeting ("Voice agent" toggle) — the bot answers out
+loud when addressed by its display name (joined as "Ali" → say "Ali, ..."). Plumbing:
+Recall realtime websocket (mixed 16kHz PCM) → `voice/agent.py` (systemd `mitaxy-voice`,
+port 8791, nginx `/voice-ws/` wss proxy, Django-signed URLs) → Deepgram live STT → wake-word →
+Groq short answer → Deepgram Aura TTS mp3 → Recall `output_audio` (unlocked via silent
+`automatic_audio_output` clip). Live at **https://mitaxy.moinit.dev** (HTTPS via Let's Encrypt). See `deploy/README.md` for ops.
 
 This document is the single source of truth for what the system is, how it's built, where every piece
 lives, why each technology was chosen, and how to operate it.
