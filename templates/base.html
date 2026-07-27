@@ -4,13 +4,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ BRAND_NAME }}{% endblock %} · {{ BRAND_NAME }}</title>
-  <meta name="description" content="{{ BRAND_TAGLINE }}">
+  <title>{% block head_title %}{% block title %}{{ BRAND_NAME }}{% endblock %} · {{ BRAND_NAME }}{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}{{ BRAND_NAME }} sends an AI notetaker into your Zoom, Google Meet or Microsoft Teams call — it records, transcribes, and emails you a clean summary with action items, decisions and the full transcript.{% endblock %}">
+  <link rel="canonical" href="{{ SITE_URL }}{{ request.path }}">
+  {% block robots_meta %}{% endblock %}
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ BRAND_NAME }}">
+  <meta property="og:url" content="{{ SITE_URL }}{{ request.path }}">
+  <meta property="og:title" content="{% block og_title %}{{ BRAND_NAME }} — AI meeting notetaker for Zoom, Google Meet &amp; Teams{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Paste a meeting link, get a recorded call turned into a summary, action items and a speaker-labelled transcript — delivered to your inbox.{% endblock %}">
+  <meta property="og:image" content="{{ SITE_URL }}{% static 'img/og.jpg' %}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="{{ SITE_URL }}{% static 'img/og.jpg' %}">
+  <meta name="twitter:title" content="{{ BRAND_NAME }} — AI meeting notetaker">
+  <meta name="twitter:description" content="AI notes, action items and transcripts from your Zoom, Google Meet and Teams calls.">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  {% block structured_data %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <header class="nav">

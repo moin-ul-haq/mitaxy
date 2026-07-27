@@ -1,5 +1,69 @@
 {% extends "base.html" %}
-{% block title %}{{ BRAND_TAGLINE }}{% endblock %}
+{% load static %}
+{% block head_title %}{{ BRAND_NAME }} — AI Meeting Notetaker &amp; Notes for Zoom, Google Meet, Teams{% endblock %}
+{% block meta_description %}{{ BRAND_NAME }} sends an AI notetaker bot into your Zoom, Google Meet or Microsoft Teams meeting. It records, transcribes with speaker labels, and emails you a summary with action items, key decisions and follow-ups — free to start.{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "{{ SITE_URL }}/#organization",
+      "name": "{{ BRAND_NAME }}",
+      "url": "{{ SITE_URL }}/",
+      "logo": "{{ SITE_URL }}{% static 'img/favicon.svg' %}"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "{{ BRAND_NAME }}",
+      "url": "{{ SITE_URL }}/",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "AI meeting notetaker: a bot joins your Zoom, Google Meet or Microsoft Teams call, records and transcribes it, and emails structured notes — summary, action items, decisions and follow-ups.",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+      "publisher": {"@id": "{{ SITE_URL }}/#organization"}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does the bot join my meeting?",
+          "acceptedAnswer": {"@type": "Answer", "text": "It joins from our servers like a normal participant, using the meeting link you paste. If the host has a waiting room, the bot waits to be admitted — just let it in like anyone else."}
+        },
+        {
+          "@type": "Question",
+          "name": "What if my meeting is already running?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Choose \"Deploy right now\" when creating the meeting — no date or time needed. The bot connects within moments."}
+        },
+        {
+          "@type": "Question",
+          "name": "Which platforms are supported?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Zoom, Google Meet and Microsoft Teams links are supported today."}
+        },
+        {
+          "@type": "Question",
+          "name": "Do meeting participants know it's there?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Yes — the bot appears in the participant list under a name you choose (e.g. \"Mitaxy Notetaker\"), so everyone knows the call is being recorded."}
+        },
+        {
+          "@type": "Question",
+          "name": "Can I share the notes with people who don't have an account?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Yes. Every completed meeting has a share option: anyone-with-the-link, or restricted to specific email addresses — each invitee gets a personal access link."}
+        },
+        {
+          "@type": "Question",
+          "name": "What happens if nobody admits the bot?",
+          "acceptedAnswer": {"@type": "Answer", "text": "The bot waits patiently in the lobby. If it's never admitted, the meeting is marked failed with a clear explanation — you'll see exactly what happened on the dashboard."}
+        }
+      ]
+    }
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="container">

@@ -1,11 +1,13 @@
 from django.urls import path
 
-from . import views
+from . import seo, views
 
 app_name = "meetings"
 
 urlpatterns = [
     path("", views.landing, name="landing"),
+    path("sitemap.xml", seo.sitemap_xml, name="sitemap"),
+    path("robots.txt", seo.robots_txt, name="robots"),
     path("about/", views.about, name="about"),
     path("contact/", views.contact, name="contact"),
     path("dashboard/", views.dashboard, name="dashboard"),
