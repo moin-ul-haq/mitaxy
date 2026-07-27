@@ -1,0 +1,14 @@
+[Unit]
+Description=Mitaxy in-meeting voice agent (Recall <-> Deepgram <-> Groq)
+After=network.target redis-server.service postgresql.service
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/root/mitaxy
+ExecStart=/root/mitaxy/venv/bin/python voice/agent.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

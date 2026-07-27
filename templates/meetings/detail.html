@@ -22,6 +22,7 @@
   <div class="detail-meta">
     <span>{% include "partials/icon.html" with name="calendar" %} <b>{{ meeting.scheduled_at|date:"M j, Y · g:i A" }}</b></span>
     {% if meeting.bot_name %}<span>{% include "partials/icon.html" with name="bot" %} <b>{{ meeting.bot_name }}</b></span>{% endif %}
+    {% if meeting.voice_agent_enabled %}<span>{% include "partials/icon.html" with name="mic" %} <b>Voice agent on</b> — say “{{ meeting.bot_name|default:"the bot's name" }}” in the call</span>{% endif %}
     {% if recording and recording.duration_seconds %}<span>{% include "partials/icon.html" with name="clock" %} <b>{{ recording.duration_display }}</b></span>{% endif %}
     <span>{% include "partials/icon.html" with name="mail" %} <b>{{ meeting.notes_email }}</b></span>
     {% if recording and recording.media_url %}

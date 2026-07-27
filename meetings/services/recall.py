@@ -45,10 +45,17 @@ def _headers():
     return {"Authorization": f"Token {key}", "Content-Type": "application/json"}
 
 
-def create_bot(meeting_url: str, join_at_utc_iso: str = None, bot_name: str = None) -> dict:
+def create_bot(meeting_url: str, join_at_utc_iso: str = None, bot_name: str = None,
+               voice_ws_url: str = None) -> dict:
     """
     Dispatch a bot into `meeting_url`. If `join_at_utc_iso` is given (ISO-8601, UTC)
     the bot joins at that time; if omitted, it joins immediately.
+
+    If `voice_ws_url` is given, the bot is configured as a voice agent: it streams
+    mixed call audio to that websocket (16kHz mono S16LE PCM, base64 in JSON
+    events) and is armed for `output_audio` pushes (via a silent
+    automatic_audio_output clip, per Recall's docs).
+
     Returns the created bot dict (contains 'id').
     """
     bot_name = bot_name or settings.RECALL_BOT_NAME
@@ -60,6 +67,20 @@ def create_bot(meeting_url: str, join_at_utc_iso: str = None, bot_name: str = No
         "bot_name": bot_name,
         "recording_config": {"video_mixed_layout": "speaker_view"},
     }
+    if voice_ws_url:
+        from .voice_assets import SILENT_MP3_B64
+
+        payload["recording_config"]["audio_mixed_raw"] = {}
+        payload["recording_config"]["realtime_endpoints"] = [{
+            "type": "websocket",
+            "url": voice_ws_url,
+            "events": ["audio_mixed_raw.data"],
+        }]
+        # Required to unlock the output_audio endpoint; the clip is ~0.4s of
+        # silence so participants hear nothing on join.
+        payload["automatic_audio_output"] = {
+            "in_call_recording": {"data": {"kind": "mp3", "b64_data": SILENT_MP3_B64}}
+        }
     if join_at_utc_iso:
         payload["join_at"] = join_at_utc_iso
     try:
@@ -68,7 +89,9 @@ def create_bot(meeting_url: str, join_at_utc_iso: str = None, bot_name: str = No
         raise RecallError(f"create_bot network error: {exc}")
 
     # Some Recall accounts/plans reject an explicit recording_config — retry minimal.
-    if resp.status_code in (400, 422):
+    # Only for plain notetaker bots: a voice bot must keep its config, so we surface
+    # the validation error instead of silently degrading.
+    if resp.status_code in (400, 422) and not voice_ws_url:
         logger.warning("Recall create_bot 4xx with recording_config (%s); retrying minimal", resp.text[:200])
         payload.pop("recording_config", None)
         try:
@@ -79,6 +102,27 @@ def create_bot(meeting_url: str, join_at_utc_iso: str = None, bot_name: str = No
     if resp.status_code not in (200, 201):
         raise RecallError(f"create_bot failed ({resp.status_code}): {resp.text[:400]}")
     return resp.json()
+
+
+def output_audio(bot_id: str, mp3_b64: str) -> bool:
+    """Play an MP3 clip through the bot into the call (voice-agent replies).
+    Returns True on success; logs and returns False on failure (never raises)."""
+    if not bot_id:
+        return False
+    try:
+        resp = _session.post(
+            f"{_base_url()}/bot/{bot_id}/output_audio/",
+            json={"kind": "mp3", "b64_data": mp3_b64},
+            headers=_headers(),
+            timeout=TIMEOUT,
+        )
+        if resp.status_code in (200, 201, 202, 204):
+            return True
+        logger.error("output_audio failed (%s): %s", resp.status_code, resp.text[:300])
+        return False
+    except requests.RequestException:
+        logger.exception("output_audio network error for bot %s", bot_id)
+        return False
 
 
 def get_bot(bot_id: str) -> dict:

@@ -49,6 +49,14 @@
       {% include "partials/field.html" with field=form.bot_name %}
       {% include "partials/field.html" with field=form.notes_email %}
 
+      <div class="field">
+        <label class="switch">
+          <input type="checkbox" name="voice_agent_enabled" {% if form.voice_agent_enabled.value %}checked{% endif %}>
+          <span class="switch__track"></span>
+          <span class="switch__label"><b>Voice agent</b> <span class="muted">(beta)</span> — the bot answers out loud when someone says its display name in the call</span>
+        </label>
+      </div>
+
       <button type="submit" class="btn btn--primary btn--block btn--lg" id="scheduleSubmit"
               data-label-later="Schedule the bot" data-label-now="Deploy the bot now">
         Schedule the bot

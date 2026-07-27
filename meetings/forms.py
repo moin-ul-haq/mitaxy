@@ -59,10 +59,15 @@ class ScheduleForm(forms.ModelForm):
         label="Send notes to",
         widget=forms.EmailInput(attrs={**_INPUT, "placeholder": "you@company.com"}),
     )
+    voice_agent_enabled = forms.BooleanField(
+        required=False,
+        label="Voice agent (beta)",
+        help_text="The bot answers out loud when someone calls it by its display name.",
+    )
 
     class Meta:
         model = Meeting
-        fields = ["title", "meeting_url", "bot_name", "scheduled_at", "notes_email"]
+        fields = ["title", "meeting_url", "bot_name", "scheduled_at", "notes_email", "voice_agent_enabled"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

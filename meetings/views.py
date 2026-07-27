@@ -25,6 +25,7 @@ from .models import (
 )
 from .services import recall
 from .services.mailer import send_html_email
+from .services.voice_ws import voice_ws_url
 
 logger = logging.getLogger("mitaxy")
 
@@ -118,25 +119,30 @@ def schedule(request):
         form = ScheduleForm(request.POST)
         if form.is_valid():
             meeting = form.save(commit=False, user=request.user)
+            if form.deploy_now:
+                meeting.deployed_now = True
+                meeting.status = MeetingStatus.JOINING
+            else:
+                meeting.status = MeetingStatus.SCHEDULED
+            # Save first: the voice agent's websocket URL embeds the meeting id.
+            meeting.save()
             try:
-                if form.deploy_now:
-                    # Meeting is happening now — bot joins immediately.
-                    bot = recall.create_bot(meeting.meeting_url, None, bot_name=meeting.bot_name)
-                else:
-                    bot = recall.create_bot(
-                        meeting.meeting_url,
-                        _utc_iso(meeting.scheduled_at),
-                        bot_name=meeting.bot_name,
-                    )
+                ws_url = voice_ws_url(meeting.pk) if meeting.voice_agent_enabled else None
+                bot = recall.create_bot(
+                    meeting.meeting_url,
+                    None if form.deploy_now else _utc_iso(meeting.scheduled_at),
+                    bot_name=meeting.bot_name,
+                    voice_ws_url=ws_url,
+                )
                 meeting.recall_bot_id = bot.get("id", "")
                 if not meeting.recall_bot_id:
                     raise recall.RecallError("Recall did not return a bot id")
-                if form.deploy_now:
-                    meeting.deployed_now = True
-                    meeting.status = MeetingStatus.JOINING
-                else:
-                    meeting.status = MeetingStatus.SCHEDULED
-                meeting.save()
+                meeting.save(update_fields=["recall_bot_id", "updated_at"])
+                if meeting.voice_agent_enabled:
+                    meeting.log_event(
+                        "voice_armed",
+                        f"Voice agent on — in the call, say “{meeting.bot_name or 'the bot name'}” to talk to it",
+                    )
                 if form.deploy_now:
                     meeting.log_event("deploying", "Bot deployed — connecting to the call now")
                     messages.success(
@@ -155,6 +161,8 @@ def schedule(request):
                 return redirect(meeting.get_absolute_url())
             except recall.RecallError as exc:
                 logger.error("create_bot failed: %s", exc)
+                # Nothing was dispatched — don't leave a phantom meeting behind.
+                meeting.delete()
                 messages.error(
                     request,
                     "We couldn't dispatch the bot for that link. Double-check the meeting URL and try again.",
@@ -202,7 +210,9 @@ def deploy_now(request, pk):
     # Cancel the existing scheduled bot, then dispatch a fresh one with no join_at.
     recall.delete_bot(meeting.recall_bot_id)
     try:
-        bot = recall.create_bot(meeting.meeting_url, None, bot_name=meeting.bot_name)
+        ws_url = voice_ws_url(meeting.pk) if meeting.voice_agent_enabled else None
+        bot = recall.create_bot(meeting.meeting_url, None, bot_name=meeting.bot_name,
+                                voice_ws_url=ws_url)
         new_id = bot.get("id", "")
         if not new_id:
             raise recall.RecallError("Recall did not return a bot id")

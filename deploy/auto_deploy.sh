@@ -46,6 +46,8 @@ fi
 
 # Restart ONLY mitaxy's own services (shared box — other apps must not be touched).
 systemctl restart mitaxy mitaxy-celery mitaxy-celerybeat >> "$LOG" 2>&1
+# Voice agent restarts only if installed & running (no-op before first install).
+systemctl try-restart mitaxy-voice >> "$LOG" 2>&1 || true
 
 sleep 3
 if systemctl is-active --quiet mitaxy; then
