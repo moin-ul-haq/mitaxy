@@ -24,13 +24,14 @@ The path token is Django-signed so only bots we created can connect.
 """
 import asyncio
 import base64
+import difflib
 import json
 import logging
 import os
 import re
 import sys
 import time
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 # --- Django bootstrap (gives us settings + ORM) -----------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -59,18 +60,25 @@ HOST = os.environ.get("VOICE_HOST", "127.0.0.1")
 PORT = int(os.environ.get("VOICE_PORT", "8791"))
 MAX_SESSIONS = int(os.environ.get("VOICE_MAX_SESSIONS", "8"))
 
+# interim_results + endpointing=300: final transcripts land ~0.3s after the
+# speaker stops instead of seconds later — the single biggest latency win.
 DG_LIVE_URL = (
     "wss://api.deepgram.com/v1/listen"
     "?encoding=linear16&sample_rate=16000&channels=1"
-    "&model=nova-2&smart_format=true&punctuate=true&interim_results=false"
+    "&model=nova-2&smart_format=true&punctuate=true"
+    "&interim_results=true&endpointing=300"
 )
 DG_SPEAK_URL = "https://api.deepgram.com/v1/speak?model={model}&encoding=mp3"
-TTS_MODEL = os.environ.get("VOICE_TTS_MODEL", "aura-asteria-en")
+# Aura voices per selected gender (env-overridable).
+TTS_FEMALE = os.environ.get("VOICE_TTS_FEMALE", "aura-asteria-en")
+TTS_MALE = os.environ.get("VOICE_TTS_MALE", "aura-orion-en")
 
-ANSWER_COOLDOWN_SEC = 3.0
+ANSWER_COOLDOWN_SEC = 2.0
 AWAIT_QUESTION_SEC = 9.0       # after a bare "Ali?" wait this long for the question
 CONTEXT_MAX_CHARS = 3500       # rolling transcript given to the LLM
-MAX_ANSWER_CHARS = 420         # keep spoken replies short
+MAX_ANSWER_CHARS = 300         # keep spoken replies short
+WAKE_FUZZ = 0.72               # fuzzy-match threshold for the wake word
+WORD_RE = re.compile(r"[A-Za-z']+")
 
 SYSTEM_PROMPT = (
     "You are {bot_name}, a helpful AI voice assistant sitting in a live meeting"
@@ -88,7 +96,7 @@ SYSTEM_PROMPT = (
 def _db_load_meeting(meeting_id: int):
     return (
         Meeting.objects.filter(pk=meeting_id, voice_agent_enabled=True)
-        .only("id", "title", "bot_name", "recall_bot_id", "platform")
+        .only("id", "title", "bot_name", "recall_bot_id", "platform", "voice_gender")
         .first()
     )
 
@@ -125,9 +133,9 @@ def _groq_answer(bot_name: str, title: str, context: str, question: str) -> str:
     return text[:MAX_ANSWER_CHARS]
 
 
-def _aura_tts(text: str) -> bytes:
+def _aura_tts(text: str, model: str) -> bytes:
     resp = requests.post(
-        DG_SPEAK_URL.format(model=TTS_MODEL),
+        DG_SPEAK_URL.format(model=model),
         json={"text": text},
         headers={"Authorization": f"Token {settings.DEEPGRAM_API_KEY}",
                  "Content-Type": "application/json"},
@@ -146,10 +154,12 @@ class VoiceSession:
         self.meeting = meeting
         self.bot_name = (meeting.bot_name or settings.RECALL_BOT_NAME).strip()
         self.wake_words = self._wake_words(self.bot_name)
+        self.tts_model = TTS_MALE if meeting.voice_gender == "male" else TTS_FEMALE
         self.dg = None                      # Deepgram websocket
         self.transcript = []                # [(t, text)] final segments
         self.awaiting_until = 0.0           # "Ali?" said — waiting for the question
         self.speaking_until = 0.0           # suppress wake detection while bot talks
+        self.last_reply = ""                # for self-echo filtering
         self.last_answer_at = 0.0
         self.last_audio_at = time.monotonic()
         self.closed = False
@@ -163,9 +173,45 @@ class VoiceSession:
         return words
 
     @property
-    def wake_re(self):
-        alts = "|".join(re.escape(w) for w in sorted(self.wake_words, key=len, reverse=True))
-        return re.compile(rf"\b(?:hey\s+|ok\s+|okay\s+)?({alts})\b[\s,.!?:]*", re.IGNORECASE)
+    def dg_url(self):
+        """Live-STT URL with the bot's name boosted so Deepgram actually hears it.
+        Proper nouns ("Moin", "Mitaxy") are exactly what ASR mangles by default —
+        keyword boosting is the fix."""
+        url = DG_LIVE_URL
+        for w in self.wake_words:
+            url += f"&keywords={quote(w)}:8"
+        return url
+
+    def find_wake(self, text):
+        """Return char-offset just past the wake word, or -1. Fuzzy so that
+        'Moin' still wakes when Deepgram writes 'Mo in'/'Moyn'/'Main'."""
+        tl = text.lower()
+        squashed = tl.replace(" ", "")
+        for m in WORD_RE.finditer(tl):
+            w = m.group(0)
+            if len(w) < 3:
+                continue
+            for wake in self.wake_words:
+                if w == wake or difflib.SequenceMatcher(None, w, wake).ratio() >= WAKE_FUZZ:
+                    return m.end()
+        # "Mo in" style splits: match against the de-spaced string too
+        for wake in self.wake_words:
+            idx = squashed.find(wake)
+            if idx != -1:
+                # map back roughly: count chars incl. spaces up to match end
+                seen = 0
+                for pos, ch in enumerate(tl):
+                    if ch != " ":
+                        seen += 1
+                    if seen >= idx + len(wake):
+                        return pos + 1
+        return -1
+
+    def looks_like_self_echo(self, text):
+        if not self.last_reply:
+            return False
+        ratio = difflib.SequenceMatcher(None, text.lower(), self.last_reply.lower()).ratio()
+        return ratio > 0.55
 
     # ---------------- transcript / wake handling ----------------
     def context_text(self):
@@ -181,14 +227,14 @@ class VoiceSession:
         if len(self.transcript) > 400:
             del self.transcript[:100]
 
-        if now < self.speaking_until:      # our own TTS coming back through the mic mix
-            return
+        if now < self.speaking_until and self.looks_like_self_echo(text):
+            return                          # our own TTS coming back through the mix
         if now - self.last_answer_at < ANSWER_COOLDOWN_SEC:
             return
 
-        m = self.wake_re.search(text)
-        if m:
-            question = text[m.end():].strip()
+        end = self.find_wake(text)
+        if end != -1:
+            question = text[end:].strip(" ,.!?:;-")
             if len(question.split()) >= 2:
                 await self.answer(question)
             else:
@@ -201,16 +247,26 @@ class VoiceSession:
     async def answer(self, question):
         self.awaiting_until = 0.0
         self.last_answer_at = time.monotonic()
+        t0 = time.monotonic()
         logger.info("meeting %s: answering %r", self.meeting.id, question[:120])
         try:
             reply = await asyncio.to_thread(
                 _groq_answer, self.bot_name, self.meeting.title, self.context_text(), question
             )
-            mp3 = await asyncio.to_thread(_aura_tts, reply)
-            est_secs = max(2.0, min(45.0, len(reply) / 13.0))
-            self.speaking_until = time.monotonic() + est_secs + 1.5
+            t1 = time.monotonic()
+            mp3 = await asyncio.to_thread(_aura_tts, reply, self.tts_model)
+            t2 = time.monotonic()
+            # Aura mp3 is ~32kbps → duration ≈ bytes / 4000; clamp sanely.
+            est_secs = max(1.5, min(30.0, len(mp3) / 4000.0))
+            self.last_reply = reply
+            self.speaking_until = time.monotonic() + est_secs + 1.0
             ok = await asyncio.to_thread(
                 recall.output_audio, self.meeting.recall_bot_id, base64.b64encode(mp3).decode()
+            )
+            t3 = time.monotonic()
+            logger.info(
+                "meeting %s: reply in %.1fs (llm %.1f, tts %.1f, push %.1f) — %r",
+                self.meeting.id, t3 - t0, t1 - t0, t2 - t1, t3 - t2, reply[:80],
             )
             if ok:
                 await asyncio.to_thread(
@@ -245,7 +301,7 @@ class VoiceSession:
         if self.dg is not None:
             return
         self.dg = await websockets.connect(
-            DG_LIVE_URL,
+            self.dg_url,
             additional_headers={"Authorization": f"Token {settings.DEEPGRAM_API_KEY}"},
             max_size=2 ** 22,
         )
@@ -343,8 +399,8 @@ async def handler(ws):
 
 
 async def main():
-    logger.info("mitaxy-voice listening on %s:%s (max %s sessions, tts=%s)",
-                HOST, PORT, MAX_SESSIONS, TTS_MODEL)
+    logger.info("mitaxy-voice listening on %s:%s (max %s sessions, tts female=%s male=%s)",
+                HOST, PORT, MAX_SESSIONS, TTS_FEMALE, TTS_MALE)
     async with websockets.serve(handler, HOST, PORT, max_size=2 ** 22, ping_interval=20):
         await asyncio.Future()
 

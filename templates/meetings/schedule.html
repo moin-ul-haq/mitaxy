@@ -51,10 +51,20 @@
 
       <div class="field">
         <label class="switch">
-          <input type="checkbox" name="voice_agent_enabled" {% if form.voice_agent_enabled.value %}checked{% endif %}>
+          <input type="checkbox" name="voice_agent_enabled" id="voiceToggle" {% if form.voice_agent_enabled.value %}checked{% endif %}>
           <span class="switch__track"></span>
           <span class="switch__label"><b>Voice agent</b> <span class="muted">(beta)</span> — the bot answers out loud when someone says its display name in the call</span>
         </label>
+        <div id="voiceGenderRow" style="margin:12px 0 0 50px; {% if not form.voice_agent_enabled.value %}display:none;{% endif %}">
+          <div class="seg" style="max-width:340px; grid-template-columns:1fr 1fr;">
+            <input type="radio" name="voice_gender" value="female" id="vgFemale"
+                   {% if form.voice_gender.value != "male" %}checked{% endif %}>
+            <label class="seg__opt" for="vgFemale" style="padding:9px 10px;">Female voice</label>
+            <input type="radio" name="voice_gender" value="male" id="vgMale"
+                   {% if form.voice_gender.value == "male" %}checked{% endif %}>
+            <label class="seg__opt" for="vgMale" style="padding:9px 10px;">Male voice</label>
+          </div>
+        </div>
       </div>
 
       <button type="submit" class="btn btn--primary btn--block btn--lg" id="scheduleSubmit"
@@ -68,4 +78,16 @@
     {% include "partials/icon.html" with name="lock" %} The bot joins from our servers — nothing runs on your device.
   </p>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var t = document.getElementById("voiceToggle");
+    var row = document.getElementById("voiceGenderRow");
+    if (t && row) t.addEventListener("change", function () {
+      row.style.display = t.checked ? "" : "none";
+    });
+  })();
+</script>
 {% endblock %}

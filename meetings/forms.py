@@ -64,10 +64,20 @@ class ScheduleForm(forms.ModelForm):
         label="Voice agent (beta)",
         help_text="The bot answers out loud when someone calls it by its display name.",
     )
+    voice_gender = forms.ChoiceField(
+        choices=[("female", "Female voice"), ("male", "Male voice")],
+        initial="female",
+        required=False,
+        widget=forms.RadioSelect,
+    )
 
     class Meta:
         model = Meeting
-        fields = ["title", "meeting_url", "bot_name", "scheduled_at", "notes_email", "voice_agent_enabled"]
+        fields = ["title", "meeting_url", "bot_name", "scheduled_at", "notes_email",
+                  "voice_agent_enabled", "voice_gender"]
+
+    def clean_voice_gender(self):
+        return self.cleaned_data.get("voice_gender") or "female"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

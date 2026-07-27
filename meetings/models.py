@@ -59,6 +59,11 @@ class Meeting(models.Model):
     deployed_now = models.BooleanField(default=False, help_text="Bot was deployed immediately")
     # Voice agent: the bot answers when participants address it by its display name.
     voice_agent_enabled = models.BooleanField(default=False)
+    voice_gender = models.CharField(
+        max_length=8,
+        choices=[("female", "Female"), ("male", "Male")],
+        default="female",
+    )
 
     status = models.CharField(max_length=16, choices=MeetingStatus.choices, default=MeetingStatus.SCHEDULED)
     # When the current status was entered — drives the joining/waiting-room timeouts.
