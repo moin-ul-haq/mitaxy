@@ -118,6 +118,23 @@ def schedule(request):
     if request.method == "POST":
         form = ScheduleForm(request.POST)
         if form.is_valid():
+            # Double-submit guard: the same link scheduled again within 90s is
+            # almost certainly a double click — reuse the meeting we just made
+            # instead of dispatching a second bot into the same call.
+            dupe = (
+                Meeting.objects.filter(
+                    user=request.user,
+                    meeting_url=form.cleaned_data["meeting_url"],
+                    created_at__gte=timezone.now() - datetime.timedelta(seconds=90),
+                )
+                .exclude(status__in=[MeetingStatus.FAILED, MeetingStatus.CANCELLED])
+                .exclude(recall_bot_id="")
+                .first()
+            )
+            if dupe:
+                messages.info(request, "A bot for this meeting is already on its way — here it is.")
+                return redirect(dupe.get_absolute_url())
+
             meeting = form.save(commit=False, user=request.user)
             if form.deploy_now:
                 meeting.deployed_now = True
@@ -208,7 +225,15 @@ def deploy_now(request, pk):
         return redirect("meetings:dashboard")
 
     # Cancel the existing scheduled bot, then dispatch a fresh one with no join_at.
-    recall.delete_bot(meeting.recall_bot_id)
+    # If Recall refuses the cancel (bot already provisioning close to its join
+    # time), do NOT create a second bot — that's how calls end up with two bots.
+    if not recall.delete_bot(meeting.recall_bot_id):
+        messages.info(
+            request,
+            "The scheduled bot is already being dispatched and can't be replaced — "
+            "it will join on its own in a moment.",
+        )
+        return redirect(meeting.get_absolute_url())
     try:
         ws_url = voice_ws_url(meeting.pk) if meeting.voice_agent_enabled else None
         bot = recall.create_bot(meeting.meeting_url, None, bot_name=meeting.bot_name,

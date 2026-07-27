@@ -64,6 +64,29 @@
     });
   });
 
+  // ------------------------------------------------- double-submit guard
+  // A slow backend call (dispatching a bot takes a couple of seconds) invites
+  // a second click — which used to send two bots into the call. Block repeat
+  // submissions and give the button a busy state. pointer-events (not
+  // `disabled`) so named submit-button values still reach the server.
+  document.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (form._mxBusy) { e.preventDefault(); return; }
+    form._mxBusy = true;
+    setTimeout(function () { form._mxBusy = false; }, 10000);
+    $all('button[type="submit"], input[type="submit"]', form).forEach(function (b) {
+      setTimeout(function () {
+        b.style.pointerEvents = "none";
+        b.style.opacity = "0.65";
+        if (b.dataset.busyLabel) b.textContent = b.dataset.busyLabel;
+        setTimeout(function () {
+          b.style.pointerEvents = "";
+          b.style.opacity = "";
+        }, 10000);
+      }, 0);
+    });
+  }, true);
+
   // ------------------------------------------------------------- modals
   $all("[data-modal-open]").forEach(function (btn) {
     btn.addEventListener("click", function () {
